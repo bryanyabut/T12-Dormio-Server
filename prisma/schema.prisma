@@ -12,3 +12,7 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// Shcema for Dormio application
+
+

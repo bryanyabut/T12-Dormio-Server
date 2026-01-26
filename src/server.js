@@ -53,8 +53,8 @@ process.on("uncaughtException", async (err) => {
 
 
 // Handle SIGTERM signal shutdown (graceful shutdown)
-process.on("SIGINT", async () => {
-    console.log("SIGINT received. Shutting down gracefully...");
+process.on("SIGTERM", async () => {
+    console.log("SIGTERM received. Shutting down gracefully...");
     server.close(async () => {
         await disconnectDB();
         process.exit(0);

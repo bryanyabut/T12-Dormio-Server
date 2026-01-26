@@ -1,6 +1,9 @@
 Dependencies installed: CORS, Prisma, Express js, nodemon, dotenv, morgan, bcrypt, jsonwebtoken(jwt)
 
-# Instruction
+# Instructions
 ## Use separate branch
 - Make a separate branch for you own tasks
 - use your name to make a separate branch
+
+## After cloning or pulling
+- npm install

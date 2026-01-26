@@ -9,12 +9,10 @@ const errorHandler = require("./middleware/error");
 
 const PORT = process.env.PORT || 3000;
 
-config();
-connectDB()
-
 const app = express();
 
-//TODO: Connect to database
+// connect to database
+connectDB();
 
 //TODO: cors Middleware
 

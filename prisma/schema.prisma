@@ -183,6 +183,22 @@ model MealItem {
   mealItemIngredients MealItemIngredient[]
 }
 
+model MealPlan {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  mealItemId Int
+  mealDate   DateTime @db.Date
+  mealType   MealType
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mealItem MealItem @relation(fields: [mealItemId], references: [id])
+
+  @@index([userId, mealDate])
+}
+
 model maintenance_requests {
   id          Int      @id @default(autoincrement())
   user_id     Int
@@ -195,21 +211,6 @@ model maintenance_requests {
 
   @@index([user_id], map: "idx_maintenance_requests_user_id")
 }
-
-model meal_plans {
-  id              Int               @id @default(autoincrement())
-  user_id         Int
-  title           String?
-  created_at      DateTime          @default(now()) @db.Timestamptz(6)
-  updated_at      DateTime          @default(now()) @db.Timestamptz(6)
-  bills           bills[]
-  budgets         budgets[]
-  class_schedules class_schedules[]
-  users           users             @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@index([user_id], map: "idx_meal_plans_user_id")
-}
-
 
 model user_bill_shares {
   user_id       Int

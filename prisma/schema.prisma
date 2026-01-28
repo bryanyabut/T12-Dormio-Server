@@ -1,13 +1,12 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+  engineType = "library"
 }
 
 datasource db {
   provider = "postgresql"
 }
-
-// Model definitions below:
 
 model address {
   id          Int     @id @default(autoincrement())
@@ -19,7 +18,33 @@ model address {
   users       users[]
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model bill_reminders {
+  id              Int              @id @default(autoincrement())
+  bill_share_id   Int
+  reminder_date   DateTime?        @db.Date
+  reminder_method reminder_method?
+  bill_shares     bill_shares      @relation(fields: [bill_share_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model bill_share_links {
+  bill_id       Int
+  bill_share_id Int
+  bills         bills       @relation(fields: [bill_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  bill_shares   bill_shares @relation(fields: [bill_share_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([bill_id, bill_share_id])
+}
+
+model bill_shares {
+  id               Int                @id @default(autoincrement())
+  sharing_amount   Decimal?           @db.Decimal(15, 2)
+  paid             Boolean            @default(false)
+  reminder_count   Int                @default(0)
+  bill_reminders   bill_reminders[]
+  bill_share_links bill_share_links[]
+  user_bill_shares user_bill_shares[]
+}
+
 model bills {
   id               Int                @id @default(autoincrement())
   user_id          Int
@@ -33,6 +58,15 @@ model bills {
   bill_share_links bill_share_links[]
   meal_plans       meal_plans?        @relation(fields: [meal_plan_id], references: [id], onUpdate: NoAction)
   users            users              @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model budget_expenses {
+  budget_id  Int
+  expense_id Int
+  budgets    budgets  @relation(fields: [budget_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  expenses   expenses @relation(fields: [expense_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([budget_id, expense_id])
 }
 
 model budgets {
@@ -66,131 +100,6 @@ model calendar {
   @@index([user_id], map: "idx_calendar_user_id")
 }
 
-model chores {
-  id                     Int                      @id @default(autoincrement())
-  chore_name             String?
-  description            String?
-  chore_assignment_items chore_assignment_items[]
-}
-
-model expenses {
-  id              Int               @id @default(autoincrement())
-  category        String?
-  amount          Decimal?          @db.Decimal(15, 2)
-  date_created    DateTime?         @default(dbgenerated("CURRENT_DATE")) @db.Date
-  total_expenses  Decimal?          @db.Decimal(15, 2)
-  budget_expenses budget_expenses[]
-}
-
-model ingredients {
-  id                    Int                     @id @default(autoincrement())
-  name                  String                  @unique
-  meal_item_ingredients meal_item_ingredients[]
-}
-
-model meal_items {
-  id                    Int                     @id @default(autoincrement())
-  meal_name             String?
-  calories              Int?
-  description           String?
-  diet_type             String?
-  meal_item_ingredients meal_item_ingredients[]
-  meal_plan_items       meal_plan_items[]
-}
-
-model meal_plans {
-  id              Int               @id @default(autoincrement())
-  user_id         Int
-  title           String?
-  created_at      DateTime          @default(now()) @db.Timestamptz(6)
-  updated_at      DateTime          @default(now()) @db.Timestamptz(6)
-  bills           bills[]
-  budgets         budgets[]
-  class_schedules class_schedules[]
-  meal_plan_items meal_plan_items[]
-  users           users             @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@index([user_id], map: "idx_meal_plans_user_id")
-}
-
-model roles {
-  id    Int     @id @default(autoincrement())
-  role  String  @unique
-  users users[]
-}
-
-model users {
-  id                   Int                    @id @default(autoincrement())
-  first_name           String?
-  last_name            String?
-  email                String                 @unique
-  password_hash        String?
-  date_added           DateTime?              @db.Timestamptz(6)
-  address_id           Int?
-  role_id              Int
-  work_shift_id        Int?
-  created_at           DateTime               @default(now()) @db.Timestamptz(6)
-  updated_at           DateTime               @default(now()) @db.Timestamptz(6)
-  bills                bills[]
-  budgets              budgets[]
-  calendar             calendar[]
-  chore_assignments    chore_assignments[]
-  class_schedules      class_schedules[]
-  maintenance_requests maintenance_requests[]
-  meal_plans           meal_plans[]
-  user_bill_shares     user_bill_shares[]
-  address              address?               @relation(fields: [address_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  roles                roles                  @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  work_shifts          work_shifts?           @relation(fields: [work_shift_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@index([address_id], map: "idx_users_address_id")
-  @@index([role_id], map: "idx_users_role_id")
-}
-
-model work_shifts {
-  id         Int       @id @default(autoincrement())
-  job_name   String?
-  date_start DateTime? @db.Timestamptz(6)
-  date_end   DateTime? @db.Timestamptz(6)
-  users      users[]
-}
-
-model bill_reminders {
-  id              Int              @id @default(autoincrement())
-  bill_share_id   Int
-  reminder_date   DateTime?        @db.Date
-  reminder_method reminder_method?
-  bill_shares     bill_shares      @relation(fields: [bill_share_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-}
-
-model bill_share_links {
-  bill_id       Int
-  bill_share_id Int
-  bills         bills       @relation(fields: [bill_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  bill_shares   bill_shares @relation(fields: [bill_share_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@id([bill_id, bill_share_id])
-}
-
-model bill_shares {
-  id               Int                @id @default(autoincrement())
-  sharing_amount   Decimal?           @db.Decimal(15, 2)
-  paid             Boolean            @default(false)
-  reminder_count   Int                @default(0)
-  bill_reminders   bill_reminders[]
-  bill_share_links bill_share_links[]
-  user_bill_shares user_bill_shares[]
-}
-
-model budget_expenses {
-  budget_id  Int
-  expense_id Int
-  budgets    budgets  @relation(fields: [budget_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  expenses   expenses @relation(fields: [expense_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@id([budget_id, expense_id])
-}
-
 model chore_assignment_items {
   chore_id            Int
   chore_assignment_id Int
@@ -211,6 +120,13 @@ model chore_assignments {
   users                  users                    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
+model chores {
+  id                     Int                      @id @default(autoincrement())
+  chore_name             String?
+  description            String?
+  chore_assignment_items chore_assignment_items[]
+}
+
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model class_schedules {
   id            Int         @id @default(autoincrement())
@@ -226,6 +142,21 @@ model class_schedules {
   updated_at    DateTime    @default(now()) @db.Timestamptz(6)
   meal_plans    meal_plans? @relation(fields: [meal_plan_id], references: [id], onUpdate: NoAction)
   users         users       @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model expenses {
+  id              Int               @id @default(autoincrement())
+  category        String?
+  amount          Decimal?          @db.Decimal(15, 2)
+  date_created    DateTime?         @default(dbgenerated("CURRENT_DATE")) @db.Date
+  total_expenses  Decimal?          @db.Decimal(15, 2)
+  budget_expenses budget_expenses[]
+}
+
+model ingredients {
+  id                    Int                     @id @default(autoincrement())
+  name                  String                  @unique
+  meal_item_ingredients meal_item_ingredients[]
 }
 
 model maintenance_requests {
@@ -250,6 +181,16 @@ model meal_item_ingredients {
   @@id([meal_item_id, ingredient_id])
 }
 
+model meal_items {
+  id                    Int                     @id @default(autoincrement())
+  meal_name             String?
+  calories              Int?
+  description           String?
+  diet_type             String?
+  meal_item_ingredients meal_item_ingredients[]
+  meal_plan_items       meal_plan_items[]
+}
+
 model meal_plan_items {
   id           Int        @id @default(autoincrement())
   meal_plan_id Int
@@ -261,6 +202,27 @@ model meal_plan_items {
   @@unique([meal_plan_id, meal_item_id, day_of_week])
 }
 
+model meal_plans {
+  id              Int               @id @default(autoincrement())
+  user_id         Int
+  title           String?
+  created_at      DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime          @default(now()) @db.Timestamptz(6)
+  bills           bills[]
+  budgets         budgets[]
+  class_schedules class_schedules[]
+  meal_plan_items meal_plan_items[]
+  users           users             @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_meal_plans_user_id")
+}
+
+model roles {
+  id    Int       @id @default(autoincrement())
+  role  user_role @unique
+  users users[]
+}
+
 model user_bill_shares {
   user_id       Int
   bill_share_id Int
@@ -268,6 +230,43 @@ model user_bill_shares {
   users         users       @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@id([user_id, bill_share_id])
+}
+
+model users {
+  id                   Int                    @id @default(autoincrement())
+  first_name           String?
+  last_name            String?
+  email                String?                @unique
+  password_hash        String?
+  date_added           DateTime?              @db.Timestamptz(6)
+  address_id           Int?
+  role_id              Int
+  work_shift_id        Int?
+  created_at           DateTime               @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime               @default(now()) @db.Timestamptz(6)
+  bills                bills[]
+  budgets              budgets[]
+  calendar             calendar[]
+  chore_assignments    chore_assignments[]
+  class_schedules      class_schedules[]
+  maintenance_requests maintenance_requests[]
+  meal_plans           meal_plans[]
+  user_bill_shares     user_bill_shares[]
+  address              address?               @relation(fields: [address_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  roles                roles                  @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  work_shifts          work_shifts?           @relation(fields: [work_shift_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([address_id], map: "idx_users_address_id")
+  @@index([role_id], map: "idx_users_role_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model work_shifts {
+  id         Int       @id @default(autoincrement())
+  job_name   String?
+  date_start DateTime? @db.Timestamptz(6)
+  date_end   DateTime? @db.Timestamptz(6)
+  users      users[]
 }
 
 enum bill_status {
@@ -288,6 +287,12 @@ enum calendar_source_type {
 enum reminder_method {
   Email
   Notification
+}
+
+enum user_role {
+  staff
+  admin
+  student
 }
 
 enum weekday {

@@ -2,7 +2,6 @@ require("dotenv").config();
 
 const express = require("express");
 const path = require("path");
-const {config} = require("dotenv");
 const { connectDB, disconnectDB } = require("./config/db");
 //TODO: Other required modules
 const errorHandler = require("./middleware/error");

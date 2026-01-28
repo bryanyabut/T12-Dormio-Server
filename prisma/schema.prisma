@@ -217,11 +217,6 @@ model meal_plans {
   @@index([user_id], map: "idx_meal_plans_user_id")
 }
 
-model roles {
-  id    Int       @id @default(autoincrement())
-  role  user_role @unique
-  users users[]
-}
 
 model user_bill_shares {
   user_id       Int
@@ -232,32 +227,29 @@ model user_bill_shares {
   @@id([user_id, bill_share_id])
 }
 
-model users {
-  id                   Int                    @id @default(autoincrement())
-  first_name           String?
-  last_name            String?
-  email                String?                @unique
-  password_hash        String?
-  date_added           DateTime?              @db.Timestamptz(6)
-  address_id           Int?
-  role_id              Int
-  work_shift_id        Int?
-  created_at           DateTime               @default(now()) @db.Timestamptz(6)
-  updated_at           DateTime               @default(now()) @db.Timestamptz(6)
-  bills                bills[]
-  budgets              budgets[]
-  calendar             calendar[]
-  chore_assignments    chore_assignments[]
-  class_schedules      class_schedules[]
-  maintenance_requests maintenance_requests[]
-  meal_plans           meal_plans[]
-  user_bill_shares     user_bill_shares[]
-  address              address?               @relation(fields: [address_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  roles                roles                  @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  work_shifts          work_shifts?           @relation(fields: [work_shift_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+model User {
+  id           Int      @id @default(autoincrement())
+  firstName    String
+  lastName     String
+  email        String   @unique
+  passwordHash String
+  role         UserRole @default(STUDENT)
+  addressId    Int?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  @@index([address_id], map: "idx_users_address_id")
-  @@index([role_id], map: "idx_users_role_id")
+  // Relations
+  address             Address?             @relation(fields: [addressId], references: [id])
+  mealPlans           MealPlan[]
+  choreAssignments    ChoreAssignment[]
+  budgets             Budget[]
+  expenses            Expense[]
+  bills               Bill[]
+  billSharing         BillSharing[]
+  schedules           Schedule[]
+  maintenanceRequests MaintenanceRequest[]
+
+  @@index([email])
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.

@@ -269,38 +269,70 @@ model work_shifts {
   users      users[]
 }
 
-enum bill_status {
-  Unpaid
-  Partially_Paid @map("Partially Paid")
-  Paid
+//Enums
+enum UserRole {
+  STUDENT
+  STAFF
+  ADMIN
 }
 
-enum calendar_source_type {
-  Bills
-  Maintenance
-  ClassSched
-  Chores
-  MealPlan
-  WorkSched
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
 }
 
-enum reminder_method {
-  Email
-  Notification
+enum UrgencyLevel {
+  LOW
+  MEDIUM
+  HIGH
 }
 
-enum user_role {
-  staff
-  admin
-  student
+enum RequestStatus {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
 }
 
-enum weekday {
-  Mon
-  Tue
-  Wed
-  Thu
-  Fri
-  Sat
-  Sun
+enum BillStatus {
+  UNPAID
+  PARTIALLY_PAID
+  PAID
+}
+
+enum ReminderMethod {
+  EMAIL
+  NOTIFICATION
+}
+
+enum ScheduleType {
+  WORK
+  CLASS
+  PERSONAL
+}
+
+enum DietaryRestriction {
+  GLUTEN_FREE
+  DAIRY_FREE
+  VEGETARIAN
+  NUT_FREE
+  HALAL
+  KOSHER
+}
+
+enum ExpenseCategory {
+  FOOD
+  UTILITIES
+  ENTERTAINMENT
+  SUPPLIES
+  TRANSPORTATION
+  EDUCATION
+  HEALTHCARE
+  OTHER
+}
+
+enum ChoreStatus {
+  PENDING
+  COMPLETED
+  OVERDUE
 }

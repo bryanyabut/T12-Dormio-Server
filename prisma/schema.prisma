@@ -175,6 +175,23 @@ model Schedule {
   @@index([userId, startTime])
 }
 
+model MaintenanceRequest {
+  id          Int           @id @default(autoincrement())
+  userId      Int
+  title       String
+  description String
+  urgency     UrgencyLevel
+  status      RequestStatus @default(PENDING)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  resolvedAt  DateTime?
+
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+}
+
 model User {
   id           Int      @id @default(autoincrement())
   firstName    String

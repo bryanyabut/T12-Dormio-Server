@@ -80,22 +80,6 @@ model Budget {
   @@index([userId])
 }
 
-model calendar {
-  id          Int                   @id @default(autoincrement())
-  user_id     Int
-  start_at    DateTime?             @db.Timestamptz(6)
-  end_at      DateTime?             @db.Timestamptz(6)
-  all_day     Boolean               @default(false)
-  created_at  DateTime              @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime              @default(now()) @db.Timestamptz(6)
-  source_type calendar_source_type?
-  source_id   Int?
-  users       users                 @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@index([source_type, source_id], map: "idx_calendar_source")
-  @@index([user_id], map: "idx_calendar_user_id")
-}
-
 model ChoreAssignment {
   id          Int         @id @default(autoincrement())
   userId      Int
@@ -109,22 +93,6 @@ model ChoreAssignment {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, dueDate])
-}
-
-model class_schedules {
-  id            Int         @id @default(autoincrement())
-  user_id       Int
-  meal_plan_id  Int?
-  class_name    String?
-  class_date    DateTime?   @db.Date
-  start_time    DateTime?   @db.Time(6)
-  end_time      DateTime?   @db.Time(6)
-  class_section String?
-  class_code    String?
-  created_at    DateTime    @default(now()) @db.Timestamptz(6)
-  updated_at    DateTime    @default(now()) @db.Timestamptz(6)
-  meal_plans    meal_plans? @relation(fields: [meal_plan_id], references: [id], onUpdate: NoAction)
-  users         users       @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model Expense {
@@ -185,17 +153,26 @@ model MealPlan {
   @@index([userId, mealDate])
 }
 
-model maintenance_requests {
-  id          Int      @id @default(autoincrement())
-  user_id     Int
-  title       String?
+model Schedule {
+  id          Int          @id @default(autoincrement())
+  userId      Int
+  title       String
+  type        ScheduleType
   description String?
-  status      String?
-  created_at  DateTime @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime @default(now()) @db.Timestamptz(6)
-  users       users    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  startTime   DateTime
+  endTime     DateTime
+  location    String?
 
-  @@index([user_id], map: "idx_maintenance_requests_user_id")
+  // Fields are for Optional Classes
+  courseCode String?
+  section    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, startTime])
 }
 
 model User {
@@ -221,15 +198,6 @@ model User {
   maintenanceRequests MaintenanceRequest[]
 
   @@index([email])
-}
-
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-model work_shifts {
-  id         Int       @id @default(autoincrement())
-  job_name   String?
-  date_start DateTime? @db.Timestamptz(6)
-  date_end   DateTime? @db.Timestamptz(6)
-  users      users[]
 }
 
 //Enums

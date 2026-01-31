@@ -6,6 +6,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Address {
@@ -132,7 +133,7 @@ model MealItem {
   description         String?
   category            MealType?
   createdAt           DateTime             @default(now()) @map("created_at")
-  mealPlans           MealPlan[]
+  mealPlanTemplates   MealPlanTemplate[]
   mealItemIngredients MealItemIngredient[]
 
   @@map("meal_items")
@@ -150,20 +151,43 @@ model MealItemIngredient {
   @@map("meal_item_ingredients")
 }
 
-model MealPlan {
-  id         Int      @id @default(autoincrement())
-  userId     Int      @map("user_id")
-  mealItemId Int      @map("meal_item_id")
-  mealDate   DateTime @map("meal_date") @db.Date
-  mealType   MealType @map("meal_type")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+model MealPlanType {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  description String?
 
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  mealItem MealItem @relation(fields: [mealItemId], references: [id])
+  mealPlanTemplates MealPlanTemplate[]
+  userMealPlans     UserMealPlan[]
 
-  @@index([userId, mealDate])
-  @@map("meal_plans")
+  @@map("meal_plan_types")
+}
+
+model MealPlanTemplate {
+  id             Int      @id @default(autoincrement())
+  mealPlanTypeId Int      @map("meal_plan_type_id")
+  dayOfWeek      Weekday
+  mealType       MealType
+  mealItemId     Int      @map("meal_item_id")
+
+  mealPlanType MealPlanType @relation(fields: [mealPlanTypeId], references: [id], onDelete: Cascade)
+  mealItem     MealItem     @relation(fields: [mealItemId], references: [id])
+
+  @@unique([mealPlanTypeId, dayOfWeek, mealType])
+  @@map("meal_plan_templates")
+}
+
+model UserMealPlan {
+  id             Int      @id @default(autoincrement())
+  userId         Int      @map("user_id")
+  mealPlanTypeId Int      @map("meal_plan_type_id")
+  startDate      DateTime @map("start_date") @db.Date
+  endDate        DateTime @map("end_date") @db.Date
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mealPlanType MealPlanType @relation(fields: [mealPlanTypeId], references: [id], onDelete: Cascade)
+
+  @@index([userId, startDate, endDate])
+  @@map("user_meal_plans")
 }
 
 model Schedule {
@@ -219,7 +243,7 @@ model User {
 
   // Relations
   address             Address?             @relation(fields: [addressId], references: [id])
-  mealPlans           MealPlan[]
+  userMealPlans       UserMealPlan[]
   choreAssignments    ChoreAssignment[]
   budgets             Budget[]
   expenses            Expense[]
@@ -298,4 +322,14 @@ enum ChoreStatus {
   PENDING   @map("pending")
   COMPLETED @map("completed")
   OVERDUE   @map("overdue")
+}
+
+enum Weekday {
+  MON
+  TUE
+  WED
+  THU
+  FRI
+  SAT
+  SUN
 }

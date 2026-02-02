@@ -5,3 +5,6 @@ Dependencies installed: CORS, Prisma, Express js, nodemon, dotenv, morgan, bcryp
 - Make a separate branch for you own tasks
 - use your name to make a separate branch
 
+## installation steps
+- npm install
+- npx prisma generate

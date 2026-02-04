@@ -5,6 +5,7 @@ const path = require("path");
 const { connectDB, disconnectDB } = require("./config/db");
 //TODO: Other required modules
 const studentExample = require("./routes/studentsExample");
+const maintenanceRoutes = require("./routes/maintenanceRoutes");
 const { notFound, errorHandler} = require("./middleware/errorMiddleware");
 
 const PORT = process.env.PORT || 3000;
@@ -25,6 +26,7 @@ app.use(express.urlencoded({ extended: true }));
 
 //TODO: Routes
 app.use("/api/v1/students", studentExample);
+app.use("/api/v1/maintenance", maintenanceRoutes);
 
 
 //TODO:Error Handling Middleware

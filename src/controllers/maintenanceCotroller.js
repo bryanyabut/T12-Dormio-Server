@@ -16,7 +16,6 @@ const getMaintenanceRequest= asyncHandler(async (req, res, next) => {
 });
 
 //create maintenance record
-
 const createMaintenanceRequest = asyncHandler(async (req, res, next) => {
     const { title, description, urgency } = req.body;
 

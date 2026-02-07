@@ -28,8 +28,7 @@ const createMaintenanceRequest = asyncHandler(async (req, res, next) => {
             title,
             description,
             urgency,
-            // userId: req.user.id
-            userId: 1 //temporary
+            userId: req.user.id
         }
 
     });

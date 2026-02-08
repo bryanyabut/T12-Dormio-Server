@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { UserRole } = require('@prisma/client');
+const { UserRole } = require('../generated/prisma');
 
 const authenticateToken = (req, res, next) => {
   

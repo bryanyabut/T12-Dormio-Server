@@ -4,6 +4,9 @@ const { prisma } = require('../config/db');
 
 const login = async (req, res) => {
   try {
+
+    console.log("LOGIN content-type:", req.headers["content-type"]);
+    console.log("LOGIN body:", req.body);
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -18,7 +21,7 @@ const login = async (req, res) => {
       return res.status(401).json({ error: 'Credentials are invalid.' });
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash); // changed to passwordHash to match the database field
 
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Credentials are invalid.' });
@@ -33,6 +36,7 @@ const login = async (req, res) => {
     const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRES_IN,
     });
+    console.log("JWT_EXPIRES_IN:", process.env.JWT_EXPIRES_IN);
 
     res.json({
       message: 'Login is successful.',
@@ -49,6 +53,7 @@ const login = async (req, res) => {
     console.error('Login error:', error);
     res.status(500).json({ error: 'An error has occurred.' });
   }
+  
 };
 
 const register = async (req, res) => {
@@ -74,7 +79,7 @@ const register = async (req, res) => {
     const newUser = await prisma.user.create({
       data: {
         email,
-        password: hashedPassword,
+        passwordHash: hashedPassword, // changed to passwordHash to match the database field
         firstName,
         lastName,
         role: role || 'STUDENT',

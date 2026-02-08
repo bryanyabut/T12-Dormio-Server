@@ -4,9 +4,6 @@ const { prisma } = require('../config/db');
 
 const login = async (req, res) => {
   try {
-
-    console.log("LOGIN content-type:", req.headers["content-type"]);
-    console.log("LOGIN body:", req.body);
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -36,7 +33,6 @@ const login = async (req, res) => {
     const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRES_IN,
     });
-    console.log("JWT_EXPIRES_IN:", process.env.JWT_EXPIRES_IN);
 
     res.json({
       message: 'Login is successful.',

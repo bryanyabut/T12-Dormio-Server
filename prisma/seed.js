@@ -1,3 +1,4 @@
+const bcrypt = require('bcrypt');
 const {
   PrismaClient,
   UserRole,
@@ -56,6 +57,8 @@ async function main() {
     },
   })
 
+  const hashPassUser1 = await bcrypt.hash('pass123', 10);
+
   const user1 = await prisma.user.upsert({
     where: { email: 'john.doe@example.com' },
     update: {},
@@ -63,11 +66,13 @@ async function main() {
       firstName: 'John',
       lastName: 'Doe',
       email: 'john.doe@example.com',
-      passwordHash: 'pass123',
+      passwordHash: hashPassUser1,
       role: UserRole.STUDENT,
       addressId: address1.id,
     },
   })
+
+  const hashPassUser2 = await bcrypt.hash('pass456', 10);
 
   const user2 = await prisma.user.upsert({
     where: { email: 'bob.smith@example.com' },
@@ -76,11 +81,13 @@ async function main() {
       firstName: 'Bob',
       lastName: 'Smith',
       email: 'bob.smith@example.com',
-      passwordHash: 'pass456',
+      passwordHash: hashPassUser2,
       role: UserRole.STUDENT,
       addressId: address2.id,
     },
   })
+
+  const hashPassAdmin = await bcrypt.hash('adminpass', 10);
 
   const user3 = await prisma.user.upsert({
     where: { email: 'admin@dormio.com' },
@@ -89,7 +96,7 @@ async function main() {
       firstName: 'Admin',
       lastName: 'User',
       email: 'admin@dormio.com',
-      passwordHash: 'adminpass',
+      passwordHash: hashPassAdmin,
       role: UserRole.ADMIN,
       addressId: address3.id,
     },

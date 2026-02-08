@@ -38,9 +38,16 @@ const updateMaintenanceRStatus = asyncHandler(async (req, res, next) => {
         return next(new Error(`Status is required and must be one of: ${statusOptions.join(', ')}`));
     }
 
+    let resolvedAt;
+    if(status === 'RESOLVED'){
+        resolvedAt = new Date();
+    }else{
+        resolvedAt = null;
+    }
+
     const request = await prisma.maintenanceRequest.update({
         where: { id: parseInt(id) },
-        data: { status }
+        data: { status, resolvedAt }
     });
 
     if(!request){
@@ -77,7 +84,7 @@ const createMaintenanceR = asyncHandler(async (req, res, next) => {
     res.status(201).json({ success: true, data: newRequest});
 });
 
-// update maintenance record status STUDENT
+// update maintenance record STUDENT
 const updateMaintenanceR = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
     const { title, description, urgency} = req.body
@@ -93,7 +100,7 @@ const updateMaintenanceR = asyncHandler(async (req, res, next) => {
         return next(new Error('Maintenance request not found'))
     }
 
-    if(request.userId !== req.user.id && req.user.role === 'STUDENT'){
+    if(request.userId !== req.user.userId && req.user.role === 'STUDENT'){
         res.status(403);
         return next(new Error('Unauthorized to update this maintenance request'))
     }
@@ -108,6 +115,22 @@ const updateMaintenanceR = asyncHandler(async (req, res, next) => {
     });
 
     res.status(200).json({ success: true, data: updateRequest})
+});
+
+// Get maintenance requests for the logged-in student
+const getMaintenanceMyRequests = asyncHandler(async (req, res, next) => {
+    const studentRequests = await prisma.maintenanceRequest.findMany({
+        where: {
+            userId: req.user.userId,
+        }
+    });
+
+    if (!studentRequests || studentRequests.length === 0) {
+        res.status(404);
+        return next(new Error('No maintenance requests found on your account'));
+    }
+
+    res.status(200).json({ success: true, data: studentRequests });
 });
 
 //Delete maintenance record
@@ -130,4 +153,6 @@ module.exports = {
     createMaintenanceR, 
     updateMaintenanceRStatus, 
     deleteMaintenanceR, 
-    updateMaintenanceR };
+    updateMaintenanceR,
+    getMaintenanceMyRequests
+};

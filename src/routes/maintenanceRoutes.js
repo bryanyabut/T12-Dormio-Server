@@ -6,13 +6,15 @@ const { getMaintenanceR,
     createMaintenanceR, 
     updateMaintenanceRStatus, 
     deleteMaintenanceR, 
-    updateMaintenanceR
+    updateMaintenanceR,
+    getMaintenanceMyRequests
 } = require('../controllers/maintenanceCotroller');
 
 // Maintenance routes
 // student routes
 router.post('/create', authenticateToken, createMaintenanceR);
-router.put('/update/:id', authenticateToken, updateMaintenanceR);
+router.put('/student/:id', authenticateToken, updateMaintenanceR);
+router.get('/myReq', authenticateToken, getMaintenanceMyRequests);
 
 // admin routes
 router.get('/', authenticateToken, requireAdmin, getMaintenanceR);

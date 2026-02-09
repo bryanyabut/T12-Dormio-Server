@@ -108,9 +108,9 @@ const updateMaintenanceR = asyncHandler(async (req, res, next) => {
     const updateRequest = await prisma.maintenanceRequest.update({
         where: { id: parseInt(id) },
         data: { 
-            title,
-            description,
-            urgency
+            ...(title && { title }),
+            ...(description && { description }),
+            ...(urgency && { urgency })
         }
     });
 

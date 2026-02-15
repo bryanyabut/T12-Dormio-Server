@@ -9,12 +9,18 @@ const maintenanceRoutes = require("./routes/maintenanceRoutes");
 const { notFound, errorHandler} = require("./middleware/errorMiddleware");
 const authRoutes = require("./routes/auth");
 
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('../swagger');
+
 const PORT = process.env.PORT || 3000;
 
 const app = express();
 
 // connect to database
 connectDB();
+
+// (Swagger) http://localhost:3000/api-docs endpoint
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 //TODO: cors Middleware
 

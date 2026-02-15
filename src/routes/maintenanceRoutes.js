@@ -1,5 +1,9 @@
 const express = require('express');
 const router = express.Router();
+
+const { maintenanceRules } = require('../validators/maintenanceValidator');
+const validate = require('../middleware/validate');
+
 const { authenticateToken, requireAdmin } = require('../middleware/authMiddleware');
 const { getMaintenanceR, 
     getMaintenanceRById, 
@@ -12,7 +16,7 @@ const { getMaintenanceR,
 
 // Maintenance routes
 // student routes
-router.post('/create', authenticateToken, createMaintenanceR);
+router.post('/create', authenticateToken, maintenanceRules, validate, createMaintenanceR);
 router.put('/student/:id', authenticateToken, updateMaintenanceR);
 router.get('/myReq', authenticateToken, getMaintenanceMyRequests);
 

@@ -36,7 +36,7 @@ app.use(notFound);
 app.use(errorHandler);
 
 
-app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
+const server = app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
 
 
 // Handle unhandled promise rejections
@@ -59,6 +59,15 @@ process.on("uncaughtException", async (err) => {
 // Handle SIGTERM signal shutdown (graceful shutdown)
 process.on("SIGTERM", async () => {
     console.log("SIGTERM received. Shutting down gracefully...");
+    server.close(async () => {
+        await disconnectDB();
+        process.exit(0);
+    });
+});
+
+//handles SIGINT signal shutdown
+process.on("SIGINT", async () => {
+    console.log("SIGINT received. Shutting down...");
     server.close(async () => {
         await disconnectDB();
         process.exit(0);

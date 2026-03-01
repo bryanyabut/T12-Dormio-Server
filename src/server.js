@@ -4,6 +4,7 @@ const express = require("express");
 const path = require("path");
 const { connectDB, disconnectDB } = require("./config/db");
 //TODO: Other required modules
+const corsMiddleware = require("./middleware/corsMiddleware");
 const studentExample = require("./routes/studentsExample");
 const maintenanceRoutes = require("./routes/maintenanceRoutes");
 const { notFound, errorHandler} = require("./middleware/errorMiddleware");
@@ -23,6 +24,7 @@ connectDB();
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 //TODO: cors Middleware
+app.use(corsMiddleware);
 
 //TODO: Body Parser Middleware
 app.use(express.json());

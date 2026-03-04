@@ -1,10 +1,29 @@
 const {prisma} = require('../config/db');
 const { RequestStatus } = require('../generated/prisma');
 const asyncHandler = require('../middleware/asyncHandler');
+const SearchFilter = require('../utils/searchFilter');
 
 //get maintenance records ADMIN
 const getMaintenanceR= asyncHandler(async (req, res, next) => {
+
+    const { status, urgency} = req.query;
+
+    const searchField = SearchFilter(req, ['title', 'description']);
+
+    const where = {
+        ...searchField
+    };
+
+    if (status){
+        where.status = status;
+    }
+
+    if (urgency){
+        where.urgency = urgency;
+    }
+
     const studentRequests = await prisma.maintenanceRequest.findMany({
+        where,
         include: { user: true }
     });
 
@@ -119,9 +138,30 @@ const updateMaintenanceR = asyncHandler(async (req, res, next) => {
 
 // Get maintenance requests for the logged-in student
 const getMaintenanceMyRequests = asyncHandler(async (req, res, next) => {
+
+    const { status, urgency, search } = req.query;
+
+    const where = {};
+
+    if (status){
+        where.status = status;
+    }
+
+    if (urgency){
+        where.urgency = urgency;
+    }
+
+    if(search){
+        where.OR = [
+            { title: { contains: search, mode: 'insensitive' } },
+            { description: { contains: search, mode: 'insensitive' } }
+        ];
+    }
+
     const studentRequests = await prisma.maintenanceRequest.findMany({
         where: {
             userId: req.user.userId,
+            ...where
         }
     });
 

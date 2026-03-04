@@ -1,5 +1,5 @@
 require("dotenv").config();
-
+const morgan = require("morgan");
 const express = require("express");
 const path = require("path");
 const { connectDB, disconnectDB } = require("./config/db");
@@ -32,6 +32,7 @@ app.use(express.urlencoded({ extended: true }));
 
 
 //TODO: logger middleware
+app.use(morgan("dev"));
 
 //TODO: Routes
 app.use("/api/v1/students", studentExample);

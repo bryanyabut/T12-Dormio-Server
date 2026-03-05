@@ -2,7 +2,7 @@ const SearchFilter = (req, searchField = []) => {
     const where = {};
     const AND = [];
     const OR = [];
-    const search = req.query.search;
+    const { search, page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'desc'} = req.query;
 
     if (search &&  searchField.length > 0) {
         searchField.forEach(field => {
@@ -18,7 +18,7 @@ const SearchFilter = (req, searchField = []) => {
                 OR.push({
                     [field]: { 
                         contains: search, 
-                        mode: 'insensitive' 
+                        mode: 'insensitive'
                     }
                 });
             }
@@ -33,7 +33,15 @@ const SearchFilter = (req, searchField = []) => {
         where.AND = AND;
     }
 
-    return where;
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const take = Number(limit);
+    
+    const orderBy = { 
+        [sortBy]: sortOrder 
+    }
+
+    return { where, skip, take, orderBy };
     
 }
 

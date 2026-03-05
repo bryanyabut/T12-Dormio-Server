@@ -23,7 +23,7 @@ const getMaintenanceR= asyncHandler(async (req, res, next) => {
     }
 
     const studentRequests = await prisma.maintenanceRequest.findMany({
-        where,
+        ...where,
         include: { user: true }
     });
 

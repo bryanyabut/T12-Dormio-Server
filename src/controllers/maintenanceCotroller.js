@@ -8,7 +8,7 @@ const getMaintenanceR= asyncHandler(async (req, res, next) => {
 
     const { status, urgency} = req.query;
 
-    const searchField = SearchFilter(req, ['title', 'description']);
+    const searchField = SearchFilter(req, ['title', 'description', 'user.firstName', 'user.lastName']);
 
     const where = {
         ...searchField

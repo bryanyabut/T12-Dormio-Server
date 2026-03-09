@@ -4,7 +4,8 @@ const { authenticateToken, requireAdmin } = require('../middleware/authMiddlewar
 const { getMaintenanceR, 
     getMaintenanceRById, 
     createMaintenanceR, 
-    updateMaintenanceRStatus, 
+    updateMaintenanceRStatus,
+    getMyMaintenanceRById,
     deleteMaintenanceR, 
     updateMaintenanceR,
     getMaintenanceMyRequests
@@ -15,6 +16,7 @@ const { getMaintenanceR,
 router.post('/create', authenticateToken, createMaintenanceR);
 router.put('/student/:id', authenticateToken, updateMaintenanceR);
 router.get('/myReq', authenticateToken, getMaintenanceMyRequests);
+router.get('/myReq/:id', authenticateToken, getMyMaintenanceRById);
 
 // admin routes
 router.get('/', authenticateToken, requireAdmin, getMaintenanceR);

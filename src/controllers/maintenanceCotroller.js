@@ -171,6 +171,22 @@ const getMaintenanceMyRequests = asyncHandler(async (req, res, next) => {
     res.status(200).json({ success: true, data: studentRequests });
 });
 
+// get maintenance record by id STUDENT
+const getMyMaintenanceRById = asyncHandler(async (req, res, next) => {
+    const { id } = req.params;
+
+    const request = await prisma.maintenanceRequest.findUnique({
+        where: { id: parseInt(id) }
+    });
+
+    if (!request || request.userId !== req.user.userId) {
+        res.status(404);
+        return next(new Error('Maintenance request not found'));
+    }
+
+    res.status(200).json({ success: true, data: request });
+});
+
 //Delete maintenance record
 const deleteMaintenanceR = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
@@ -190,6 +206,7 @@ module.exports = {
     getMaintenanceRById, 
     createMaintenanceR, 
     updateMaintenanceRStatus, 
+    getMyMaintenanceRById,
     deleteMaintenanceR, 
     updateMaintenanceR,
     getMaintenanceMyRequests

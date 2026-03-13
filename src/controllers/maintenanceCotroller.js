@@ -4,26 +4,25 @@ const asyncHandler = require('../middleware/asyncHandler');
 const SearchFilter = require('../utils/searchFilter');
 
 //get maintenance records ADMIN
-const getMaintenanceR= asyncHandler(async (req, res, next) => {
+const getMaintenanceR = asyncHandler(async (req, res, next) => {
 
     const { status, urgency} = req.query;
 
-    const searchField = SearchFilter(req, ['title', 'description', 'user.firstName', 'user.lastName']);
-
-    const where = {
-        ...searchField
-    };
+    const {where: searchField, skip, take, orderBy} = SearchFilter(req, ['title', 'description', 'user.firstName', 'user.lastName']);
 
     if (status){
-        where.status = status;
+        searchField.status = status;
     }
 
     if (urgency){
-        where.urgency = urgency;
+        searchField.urgency = urgency;
     }
 
     const studentRequests = await prisma.maintenanceRequest.findMany({
-        ...where,
+        where: searchField,
+        skip,
+        take,
+        orderBy,
         include: { user: true }
     });
 

@@ -9,6 +9,7 @@ const studentExample = require("./routes/studentsExample");
 const maintenanceRoutes = require("./routes/maintenanceRoutes");
 const { notFound, errorHandler} = require("./middleware/errorMiddleware");
 const authRoutes = require("./routes/auth");
+const userRoutes = require("./routes/user");
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('../swagger');
@@ -38,6 +39,7 @@ app.use(morgan("dev"));
 app.use("/api/v1/students", studentExample);
 app.use("/api/v1/maintenance", maintenanceRoutes);
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/users", userRoutes);
 
 
 //TODO:Error Handling Middleware

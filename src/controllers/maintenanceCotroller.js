@@ -2,6 +2,7 @@ const {prisma} = require('../config/db');
 const { RequestStatus } = require('../generated/prisma');
 const asyncHandler = require('../middleware/asyncHandler');
 const SearchFilter = require('../utils/searchFilter');
+const sendNotificationToDevice = require('../utils/sendNotificationToDevice');
 
 //get maintenance records ADMIN
 const getMaintenanceR = asyncHandler(async (req, res, next) => {
@@ -65,8 +66,15 @@ const updateMaintenanceRStatus = asyncHandler(async (req, res, next) => {
 
     const request = await prisma.maintenanceRequest.update({
         where: { id: parseInt(id) },
-        data: { status, resolvedAt }
+        data: { status, resolvedAt },
+        include: { user: true }
     });
+
+    if(request.user?.deviceToken){
+        sendNotificationToDevice(request.user.deviceToken, 
+            'Maintenance Request Update', 
+            `Your maintenance request "${request.title}" is now: ${status}.`);
+    }
 
     if(!request){
         res.status(404);
@@ -99,6 +107,18 @@ const createMaintenanceR = asyncHandler(async (req, res, next) => {
         }
 
     });
+
+    const admins = await prisma.user.findMany({
+        where: { role: 'ADMIN' },
+        select: { deviceToken: true, id: true }
+    });
+
+    for (const admin of admins) {
+        await sendNotificationToDevice(admin.deviceToken, 
+            'New Maintenance Request', 
+            `A new maintenance request "${title}" created by: ${req.user.firstName} ${req.user.lastName}.`);
+    }
+
     res.status(201).json({ success: true, data: newRequest});
 });
 

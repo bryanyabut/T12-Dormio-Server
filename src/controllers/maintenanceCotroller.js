@@ -1,212 +1,263 @@
-const {prisma} = require('../config/db');
-const { RequestStatus } = require('../generated/prisma');
-const asyncHandler = require('../middleware/asyncHandler');
-const SearchFilter = require('../utils/searchFilter');
+const { prisma } = require("../config/db");
+const { RequestStatus } = require("../generated/prisma");
+const asyncHandler = require("../middleware/asyncHandler");
+const SearchFilter = require("../utils/searchFilter");
+const sendNotificationToDevice = require("../utils/sendNotificationToDevice");
 
 //get maintenance records ADMIN
 const getMaintenanceR = asyncHandler(async (req, res, next) => {
+  const { status, urgency } = req.query;
 
-    const { status, urgency} = req.query;
+  const {
+    where: searchField,
+    skip,
+    take,
+    orderBy,
+  } = SearchFilter(req, [
+    "title",
+    "description",
+    "user.firstName",
+    "user.lastName",
+  ]);
 
-    const {where: searchField, skip, take, orderBy} = SearchFilter(req, ['title', 'description', 'user.firstName', 'user.lastName']);
+  if (status) {
+    searchField.status = status;
+  }
 
-    if (status){
-        searchField.status = status;
-    }
+  if (urgency) {
+    searchField.urgency = urgency;
+  }
 
-    if (urgency){
-        searchField.urgency = urgency;
-    }
+  const studentRequests = await prisma.maintenanceRequest.findMany({
+    where: searchField,
+    skip,
+    take,
+    orderBy,
+    include: { user: true },
+  });
 
-    const studentRequests = await prisma.maintenanceRequest.findMany({
-        where: searchField,
-        skip,
-        take,
-        orderBy,
-        include: { user: true }
-    });
-
-    res.status(200).json({ success: true, data: studentRequests });
+  res.status(200).json({ success: true, data: studentRequests });
 });
 
 //get maintenance record by id ADMIN
 const getMaintenanceRById = asyncHandler(async (req, res, next) => {
-    const { id } = req.params;
-    const request = await prisma.maintenanceRequest.findUnique({
-        where: { id: parseInt(id) },
-        include: { user: true }
-    });
+  const { id } = req.params;
+  const request = await prisma.maintenanceRequest.findUnique({
+    where: { id: parseInt(id) },
+    include: { user: true },
+  });
 
-    if(!request){
-        res.status(404);
-        return next(new Error('Maintenance request not found'));
-    }
+  if (!request) {
+    res.status(404);
+    return next(new Error("Maintenance request not found"));
+  }
 
-    res.status(200).json({ success: true, data: request });
+  res.status(200).json({ success: true, data: request });
 });
 
 // update maintenance record status ADMIN
 const updateMaintenanceRStatus = asyncHandler(async (req, res, next) => {
-    const { id } = req.params;
-    const { status } = req.body;
+  const { id } = req.params;
+  const { status } = req.body;
 
-    const statusOptions = Object.values(RequestStatus);
-    if(!status || !statusOptions.includes(status)){
-        res.status(422);
-        return next(new Error(`Status is required and must be one of: ${statusOptions.join(', ')}`));
-    }
+  const statusOptions = Object.values(RequestStatus);
+  if (!status || !statusOptions.includes(status)) {
+    res.status(422);
+    return next(
+      new Error(
+        `Status is required and must be one of: ${statusOptions.join(", ")}`,
+      ),
+    );
+  }
 
-    let resolvedAt;
-    if(status === 'RESOLVED'){
-        resolvedAt = new Date();
-    }else{
-        resolvedAt = null;
-    }
+  let resolvedAt;
+  if (status === "RESOLVED") {
+    resolvedAt = new Date();
+  } else {
+    resolvedAt = null;
+  }
 
-    const request = await prisma.maintenanceRequest.update({
-        where: { id: parseInt(id) },
-        data: { status, resolvedAt }
+  const request = await prisma.maintenanceRequest.update({
+    where: { id: parseInt(id) },
+    data: { status, resolvedAt },
+    include: { user: true },
+  });
+
+  if (request.user?.deviceToken) {
+    await sendNotificationToDevice(request.user.deviceToken, {
+      type: "maintenance_update",
+      request_id: request.id.toString(),
+      status: request.status,
+      title: `Maintenance Request Update`,
+      message: `Your maintenance request "${request.title}" is now: ${request.status}.`,
+      user_id: request.user.id.toString(),
+      user_firstName: request.user.firstName,
+      user_lastName: request.user.lastName,
+      user_email: request.user.email,
     });
+  }
 
-    if(!request){
-        res.status(404);
-        return next(new Error('Maintenance request not found'));
-    }
+  if (!request) {
+    res.status(404);
+    return next(new Error("Maintenance request not found"));
+  }
 
-    res.status(200).json({ success: true, data: request });
+  res.status(200).json({ success: true, data: request });
 });
 
 //create maintenance record STUDENT
 const createMaintenanceR = asyncHandler(async (req, res, next) => {
-    const { title, description, urgency } = req.body;
+  const { title, description, urgency } = req.body;
 
-    if(!title || !description || !urgency){
-        res.status(422);
-        return next(new Error('Title, description, and urgency are required'));
-    }
-    
-    const newRequest = await prisma.maintenanceRequest.create({
-        data: {
-            title,
-            description,
-            urgency,
-            user: { 
-                connect: 
-                { 
-                    id: req.user.userId 
-                } 
-            }
-        }
+  if (!title || !description || !urgency) {
+    res.status(422);
+    return next(new Error("Title, description, and urgency are required"));
+  }
 
+  const newRequest = await prisma.maintenanceRequest.create({
+    data: {
+      title,
+      description,
+      urgency,
+      user: {
+        connect: {
+          id: req.user.userId,
+        },
+      },
+    },
+  });
+
+  // Notify all admins about the new maintenance request
+  const admins = await prisma.user.findMany({
+    where: { role: "ADMIN" },
+    select: { deviceToken: true, id: true },
+  });
+
+  // Get student info for notification
+  const student = await prisma.user.findUnique({
+    where: { id: req.user.userId },
+  });
+  // Send notification to each admin with a valid device token
+  for (const admin of admins) {
+    await sendNotificationToDevice(admin.deviceToken, {
+      type: "general_message",
+      title: "New Maintenance Request",
+      message: `A new maintenance request "${title}" created by: ${student.firstName} ${student.lastName}.`,
     });
-    res.status(201).json({ success: true, data: newRequest});
+  }
+
+  res.status(201).json({ success: true, data: newRequest });
 });
 
 // update maintenance record STUDENT
 const updateMaintenanceR = asyncHandler(async (req, res, next) => {
-    const { id } = req.params;
-    const { title, description, urgency} = req.body
+  const { id } = req.params;
+  const { title, description, urgency } = req.body;
 
-    const request = await prisma.maintenanceRequest.findUnique({
-        where:{
-            id: parseInt(id)
-        }       
-    });
+  const request = await prisma.maintenanceRequest.findUnique({
+    where: {
+      id: parseInt(id),
+    },
+  });
 
-    if(!request){
-        res.status(404);
-        return next(new Error('Maintenance request not found'))
-    }
+  if (!request) {
+    res.status(404);
+    return next(new Error("Maintenance request not found"));
+  }
 
-    if(request.userId !== req.user.userId && req.user.role === 'STUDENT'){
-        res.status(403);
-        return next(new Error('Unauthorized to update this maintenance request'))
-    }
+  if (request.userId !== req.user.userId && req.user.role === "STUDENT") {
+    res.status(403);
+    return next(new Error("Unauthorized to update this maintenance request"));
+  }
 
-    const updateRequest = await prisma.maintenanceRequest.update({
-        where: { id: parseInt(id) },
-        data: { 
-            ...(title && { title }),
-            ...(description && { description }),
-            ...(urgency && { urgency })
-        }
-    });
+  const updateRequest = await prisma.maintenanceRequest.update({
+    where: { id: parseInt(id) },
+    data: {
+      ...(title && { title }),
+      ...(description && { description }),
+      ...(urgency && { urgency }),
+    },
+  });
 
-    res.status(200).json({ success: true, data: updateRequest})
+  res.status(200).json({ success: true, data: updateRequest });
 });
 
 // Get maintenance requests for the logged-in student
 const getMaintenanceMyRequests = asyncHandler(async (req, res, next) => {
+  const { status, urgency } = req.query;
 
-    const { status, urgency } = req.query;
+  const {
+    where: searchWhere,
+    skip,
+    take,
+    orderBy,
+  } = SearchFilter(req, ["title", "description"]);
 
-    const {where: searchWhere, skip, take, orderBy } = SearchFilter(req, ['title', 'description']);
+  const where = {
+    userId: req.user.userId,
+    ...searchWhere,
+  };
 
-    const where = {
-        userId: req.user.userId,
-        ...searchWhere
-    };
+  if (status) {
+    where.status = status;
+  }
 
-    if (status){
-        where.status = status;
-    }
+  if (urgency) {
+    where.urgency = urgency;
+  }
 
-    if (urgency){
-        where.urgency = urgency;
-    }
+  const studentRequests = await prisma.maintenanceRequest.findMany({
+    where,
+    skip,
+    take,
+    orderBy,
+  });
 
-    const studentRequests = await prisma.maintenanceRequest.findMany({
-        where,
-        skip,
-        take,
-        orderBy
-    });
+  if (!studentRequests || studentRequests.length === 0) {
+    res.status(404);
+    return next(new Error("No maintenance requests found on your account"));
+  }
 
-    if (!studentRequests || studentRequests.length === 0) {
-        res.status(404);
-        return next(new Error('No maintenance requests found on your account'));
-    }
-
-    res.status(200).json({ success: true, data: studentRequests });
+  res.status(200).json({ success: true, data: studentRequests });
 });
 
 // get maintenance record by id STUDENT
 const getMyMaintenanceRById = asyncHandler(async (req, res, next) => {
-    const { id } = req.params;
+  const { id } = req.params;
 
-    const request = await prisma.maintenanceRequest.findUnique({
-        where: { id: parseInt(id) }
-    });
+  const request = await prisma.maintenanceRequest.findUnique({
+    where: { id: parseInt(id) },
+  });
 
-    if (!request || request.userId !== req.user.userId) {
-        res.status(404);
-        return next(new Error('Maintenance request not found'));
-    }
+  if (!request || request.userId !== req.user.userId) {
+    res.status(404);
+    return next(new Error("Maintenance request not found"));
+  }
 
-    res.status(200).json({ success: true, data: request });
+  res.status(200).json({ success: true, data: request });
 });
 
 //Delete maintenance record
 const deleteMaintenanceR = asyncHandler(async (req, res, next) => {
-    const { id } = req.params;
-    const request = await prisma.maintenanceRequest.delete({
-        where: { id: parseInt(id) }
-    });
+  const { id } = req.params;
+  const request = await prisma.maintenanceRequest.delete({
+    where: { id: parseInt(id) },
+  });
 
-    if(!request){
-        res.status(404);
-        return next(new Error('Maintenance request not found'));
-    }
-    res.status(200).json({ success: true, data: request });
+  if (!request) {
+    res.status(404);
+    return next(new Error("Maintenance request not found"));
+  }
+  res.status(200).json({ success: true, data: request });
 });
 
-module.exports = { 
-    getMaintenanceR, 
-    getMaintenanceRById, 
-    createMaintenanceR, 
-    updateMaintenanceRStatus, 
-    getMyMaintenanceRById,
-    deleteMaintenanceR, 
-    updateMaintenanceR,
-    getMaintenanceMyRequests
+module.exports = {
+  getMaintenanceR,
+  getMaintenanceRById,
+  createMaintenanceR,
+  updateMaintenanceRStatus,
+  getMyMaintenanceRById,
+  deleteMaintenanceR,
+  updateMaintenanceR,
+  getMaintenanceMyRequests,
 };

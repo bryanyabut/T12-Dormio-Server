@@ -7,6 +7,7 @@ const { connectDB, disconnectDB } = require("./config/db");
 const corsMiddleware = require("./middleware/corsMiddleware");
 const studentExample = require("./routes/studentsExample");
 const maintenanceRoutes = require("./routes/maintenanceRoutes");
+const mealPlanningRoutes = require("./routes/mealPlanningRoutes");
 const { notFound, errorHandler} = require("./middleware/errorMiddleware");
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
@@ -38,6 +39,7 @@ app.use(morgan("dev"));
 //TODO: Routes
 app.use("/api/v1/students", studentExample);
 app.use("/api/v1/maintenance", maintenanceRoutes);
+app.use("/api/v1/meal-plans", mealPlanningRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", userRoutes);
 

@@ -252,9 +252,25 @@ model User {
   billSharing         BillSharing[]
   schedules           Schedule[]
   maintenanceRequests MaintenanceRequest[]
+  profile      Profile?
 
   @@index([email])
   @@map("users")
+}
+
+model Profile {
+  id          Int     @id @default(autoincrement())
+  studentId   String  @unique @map("student_id") 
+  firstName   String  @map("first_name")
+  lastName    String  @map("last_name")
+  roomNumber  String? @map("room_number")
+  avatarUrl   String? @map("avatar_url")
+  
+  // Relation to User
+  userId      Int     @unique @map("user_id")
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
 }
 
 //Enums

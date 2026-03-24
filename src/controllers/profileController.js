@@ -7,26 +7,27 @@ const prisma = new PrismaClient();
  */
 const getProfile = async (req, res) => {
   try {
+    const userId = req.user.id || req.user.userId;
+
     const profile = await prisma.profile.findUnique({
-      where: { userId: req.user.id },
-      include: { 
+      where: { userId: userId },
+      include: {
         user: {
           select: {
-            email: true,
-            role: true
+            email: true
           }
         }
       }
     });
 
     if (!profile) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Profile not found" 
-      });
+      return res.status(404).json({ success: false, message: "Profile not found" });
     }
 
-    res.status(200).json({ success: true, data: profile });
+    res.status(200).json({
+      success: true,
+      data: profile 
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -34,9 +35,9 @@ const getProfile = async (req, res) => {
 
 /**
  *  Create or Update student profile & sync User names
- *  PUT /api/v1/profile/sync
+ *  PUT /api/v1/profile
  */
-const syncStudentProfile = async (req, res) => {
+const updateProfile = async (req, res) => {
   const { studentId, firstName, lastName, roomNumber } = req.body;
   const userId = req.user.id || req.user.userId;
 
@@ -72,7 +73,39 @@ const syncStudentProfile = async (req, res) => {
   }
 };
 
+const updateAvatar = async (req, res) => {
+  console.log("Multer File:", req.file); 
+  console.log("User from Token:", req.user);
+
+  try {
+    const userId = req.user.id || req.user.userId;
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "No file uploaded" });
+    }
+
+    const updatedProfile = await prisma.profile.update({
+      where: { userId: userId },
+      data: { avatarUrl: req.file.path }
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Profile picture updated successfully",
+      url: updatedProfile.avatarUrl
+    });
+  } catch (error) {
+    console.error("PRISMA/CLOUDINARY ERROR:", error); 
+    
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || "Internal Server Error" 
+    });
+  }
+};
+
 module.exports = { 
   getProfile, 
-  syncStudentProfile 
+  updateProfile,
+  updateAvatar
 };

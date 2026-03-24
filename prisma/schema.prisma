@@ -264,6 +264,7 @@ model Profile {
   firstName   String  @map("first_name")
   lastName    String  @map("last_name")
   roomNumber  String? @map("room_number")
+  avatarUrl   String? @map("avatar_url")
   
   // Relation to User
   userId      Int     @unique @map("user_id")

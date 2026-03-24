@@ -6,10 +6,15 @@ const profileValidation = [
     .isLength({ min: 9, max: 9 }).withMessage('Student ID must be exactly 9 digits')
     .isNumeric().withMessage('Student ID must contain only numbers'),
 
-  body('fullName')
+  body('firstName')
     .trim()
-    .notEmpty().withMessage('Full name is required')
-    .isString().withMessage('Full name must be a valid string'),
+    .notEmpty().withMessage('First name is required')
+    .isString().withMessage('First name must be a string'),
+
+  body('lastName')
+    .trim()
+    .notEmpty().withMessage('Last name is required')
+    .isString().withMessage('Last name must be a string'),
 
   body('email')
     .isEmail().withMessage('Please provide a valid email address')
@@ -18,8 +23,7 @@ const profileValidation = [
   body('roomNumber')
     .optional()
     .trim()
-    .isAlphanumeric().withMessage('Room number must be alphanumeric'),
-
+    .isAlphanumeric().withMessage('Room number must be alphanumeric')
 ];
 
 module.exports = {

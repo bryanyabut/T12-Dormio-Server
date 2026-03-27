@@ -38,34 +38,53 @@ const getProfile = async (req, res) => {
  *  PUT /api/v1/profile
  */
 const updateProfile = async (req, res) => {
-  const { studentId, firstName, lastName, roomNumber } = req.body;
+  const { studentId, firstName, lastName, roomNumber, email } = req.body;
   const userId = req.user.id || req.user.userId;
 
   try {
-    const result = await prisma.$transaction([
-      prisma.user.update({
-        where: { id: userId },
-        data: { firstName, lastName }
-      }),
-      prisma.profile.upsert({
-        where: { userId: userId },
-        update: { studentId, firstName, lastName, roomNumber },
-        create: { 
-          userId, 
-          studentId, 
-          firstName, 
-          lastName, 
-          roomNumber 
-        },
-      })
-    ]);
+    const result = await prisma.profile.upsert({
+      where: { userId: userId },
+      update: { 
+        studentId, 
+        roomNumber,
+        user: {
+          update: { firstName, lastName, email } 
+        }
+      },
+      create: { 
+        studentId, 
+        roomNumber,
+        user: {
+          connect: { id: userId } 
+        }
+      },
+      include: {
+        user: {
+          select: {
+            email: true,
+            firstName: true,
+            lastName: true
+          }
+        } 
+      }
+    });
 
     res.status(200).json({ 
       success: true, 
-      message: "Profile updated successfully", 
-      data: result[1] 
+      message: "Profile and User details updated successfully", 
+      data: result 
     });
   } catch (error) {
+    if (error.code === 'P2002') {
+      const target = error.meta?.target || [];
+      if (target.includes('email')) {
+        return res.status(400).json({ success: false, message: "Email is already taken." });
+      }
+      if (target.includes('studentId')) {
+        return res.status(400).json({ success: false, message: "Student ID is already in use." });
+      }
+    }
+
     res.status(500).json({ 
       success: false, 
       message: "Failed to sync profile: " + error.message 

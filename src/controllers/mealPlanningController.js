@@ -87,11 +87,12 @@ const getMealsByDay = asyncHandler(async (req, res) => {
         },
         include: {
             mealItem: {
-                select: {
-                    mealItemIngredients: {
-                        include: {
-                            ingredient: true
-                        }
+                id: true,
+                name: true,
+                description: true,
+                mealItemIngredients: {
+                    include: {
+                        ingredient: true
                     }
                 }
             }

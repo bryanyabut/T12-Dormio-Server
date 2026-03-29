@@ -87,12 +87,14 @@ const getMealsByDay = asyncHandler(async (req, res) => {
         },
         include: {
             mealItem: {
-                id: true,
-                name: true,
-                description: true,
-                mealItemIngredients: {
-                    include: {
-                        ingredient: true
+                select: { 
+                    id: true,
+                    name: true,
+                    description: true,
+                    mealItemIngredients: {
+                        include: {
+                            ingredient: true
+                        }
                     }
                 }
             }
@@ -115,9 +117,62 @@ const getMealsByDay = asyncHandler(async (req, res) => {
     res.status(200).json({ success: true, data: formatted });
 });
 
+// STUDENT subcribes to a meal plan
+// route: POST /api/meal-plans/subscribe
+const subscribeToMealPlan = asyncHandler(async (req, res) => {
+    const { mealPlanTypeId } = req.body;
+    const userId = req.user.userId;
+
+    if (!mealPlanTypeId || isNaN(Number(mealPlanTypeId))) {
+        return res.status(400).json({ success: false, message: 'mealPlanTypeId is required' });
+    }
+
+    const planExists = await prisma.mealPlanType.findUnique({
+        where: { id: Number(mealPlanTypeId) }
+    });
+
+    if (!planExists) {
+        return res.status(404).json({ success: false, message: 'Meal plan not found' });
+    }
+
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setMonth(endDate.getMonth() + 4);
+
+    console.log("FULL REQ.USER OBJECT:", req.user);
+    console.log("EXTRACTED USER ID:", req.user?.id);
+
+    const existing = await prisma.userMealPlan.findFirst({
+        where: { userId: Number(userId) }
+    });
+
+    const subscription = await prisma.userMealPlan.upsert({
+        where: {
+            id: existing ? existing.id : 0
+        },
+        update: {
+            mealPlanTypeId: Number(mealPlanTypeId),
+            startDate,
+            endDate
+        },
+        create: {
+            userId: Number(userId),
+            mealPlanTypeId: Number(mealPlanTypeId),
+            startDate,
+            endDate
+        }
+    });
+
+    res.status(201).json({ 
+        success: true,
+        message: `Successfully subscribed to meal plan ${planExists.name}`, 
+        data: subscription });
+});
+
 
 module.exports = {
     getMealPlanDetails,
     getAllMealPlans,
-    getMealsByDay
+    getMealsByDay,
+    subscribeToMealPlan
 }

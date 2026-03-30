@@ -19,14 +19,26 @@ const getAllMealPlans = asyncHandler(async (req, res) => {
     res.status(200).json({ success: true, data: plans });
 });
 
+// Get all meal items
+// route: GET /api/meal-items
+const getAllMealItems = asyncHandler(async (req, res) => {
+    const items = await prisma.mealItem.findMany({
+        orderBy: { name: 'asc' }
+    });
+    res.status(200).json({ success: true, data: items });
+});
+
 
 // Get weekly meal plans for the STUDENT
 // route: GET /api/meal-plans/:mealPlanTypeId
 const getMealPlanDetails = asyncHandler(async (req, res) => {
     const { mealPlanTypeId } = req.params;
 
-    if (!mealPlanTypeId) {
-        return res.status(400).json({ success: false, message: 'mealPlanTypeId is required' });
+    if (!mealPlanTypeId || isNaN(Number(mealPlanTypeId))) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'A valid numeric mealPlanTypeId is required' 
+        });
     }
 
     // Fetch all templates of meal items
@@ -169,10 +181,70 @@ const subscribeToMealPlan = asyncHandler(async (req, res) => {
         data: subscription });
 });
 
+// Get the active student's meal plan details
+// route: GET /api/meal-plans/my-plan
+const getActiveMealPlan = asyncHandler(async (req, res) => {
+    const userId = req.user.userId;
+
+    const subscription = await prisma.userMealPlan.findFirst({
+        where: { userId: Number(userId) },
+        include: {
+            mealPlanType: true
+        }
+    });
+    if (!subscription) {
+        return res.status(404).json({ success: false, message: 'No active meal plan subscription found' });
+    }
+    
+    if (!subscription) {
+        return res.status(200).json({ success: true, data: null, message: "No active subscription" });
+    }
+
+    res.status(200).json({ success: true, data: subscription });
+});
+
+// ADMIN creates/updates meal plan templates
+// route: POST /api/meal-plans/templates
+const updateMealTemplate = asyncHandler(async (req, res) => {
+    const { mealPlanTypeId, dayOfWeek, mealType, mealItemId } = req.body;
+
+    if (!mealPlanTypeId || !dayOfWeek || !mealType || !mealItemId) {
+        return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
+
+    const template = await prisma.mealPlanTemplate.upsert({
+        where:{
+            mealPlanTypeId_dayOfWeek_mealType:{
+                mealPlanTypeId: Number(mealPlanTypeId),
+                dayOfWeek,
+                mealType
+            }
+        },
+        update: {
+            mealItemId: Number(mealItemId)
+        },
+        create: {
+            mealPlanTypeId: Number(mealPlanTypeId),
+            dayOfWeek,
+            mealType,
+            mealItemId: Number(mealItemId)
+        }
+    });
+
+    res.status(200).json({
+        success: true,
+        message: `Updated ${dayOfWeek} ${mealType} for meal plan ${mealPlanTypeId}`,
+        data: template
+    })
+});
+
 
 module.exports = {
     getMealPlanDetails,
     getAllMealPlans,
     getMealsByDay,
-    subscribeToMealPlan
+    subscribeToMealPlan,
+    getActiveMealPlan,
+    updateMealTemplate,
+    getAllMealItems
 }

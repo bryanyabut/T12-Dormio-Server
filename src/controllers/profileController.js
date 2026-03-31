@@ -9,11 +9,13 @@ const getProfile = async (req, res) => {
     const userId = req.user.id || req.user.userId;
 
     const profile = await prisma.profile.findUnique({
-      where: { userId: userId },
+      where: { userId: parseInt(userId) },
       include: {
         user: {
           select: {
-            email: true
+            email: true,
+            firstName: true,
+            lastName: true
           }
         }
       }

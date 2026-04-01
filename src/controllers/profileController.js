@@ -49,7 +49,11 @@ const updateProfile = async (req, res) => {
         studentId, 
         roomNumber,
         user: {
-          update: { firstName, lastName, email } 
+          update: { 
+            ...(firstName && { firstName }),
+            ...(lastName && { lastName }),
+            ...(email && { email })
+          }
         }
       },
       create: { 
@@ -112,7 +116,7 @@ const updateAvatar = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Profile picture updated successfully",
-      url: updatedProfile.avatarUrl
+      data: updatedProfile.avatarUrl
     });
   } catch (error) {
     console.error("PRISMA/CLOUDINARY ERROR:", error); 

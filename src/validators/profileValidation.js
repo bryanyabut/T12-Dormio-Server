@@ -3,8 +3,11 @@ const { body } = require('express-validator');
 const profileValidation = [
   body('studentId')
     .notEmpty().withMessage('Student ID is required')
-    .isLength({ min: 9, max: 9 }).withMessage('Student ID must be exactly 9 digits')
-    .isNumeric().withMessage('Student ID must contain only numbers'),
+    .isLength({ min: 5, max: 20 }).withMessage('Student ID must be between 5 and 20 characters')
+    .matches(/^(?:\d{6,10}|ADMIN-\d{3})$/) 
+    .withMessage('Student ID must be a valid numeric ID or in ADMIN-XXX format')
+    .trim(),
+
 
   body('firstName')
     .trim()
@@ -21,7 +24,7 @@ const profileValidation = [
     .normalizeEmail(),
 
   body('roomNumber')
-    .optional()
+    .optional({ checkFalsy: true } )
     .trim()
     .isAlphanumeric().withMessage('Room number must be alphanumeric')
 ];

@@ -1,5 +1,4 @@
-const { PrismaClient } = require('../generated/prisma'); 
-const prisma = new PrismaClient();
+const { prisma } = require("../config/db");
 
 /**
  *  Get current student profile
@@ -10,11 +9,13 @@ const getProfile = async (req, res) => {
     const userId = req.user.id || req.user.userId;
 
     const profile = await prisma.profile.findUnique({
-      where: { userId: userId },
+      where: { userId: parseInt(userId) },
       include: {
         user: {
           select: {
-            email: true
+            email: true,
+            firstName: true,
+            lastName: true
           }
         }
       }
@@ -48,7 +49,11 @@ const updateProfile = async (req, res) => {
         studentId, 
         roomNumber,
         user: {
-          update: { firstName, lastName, email } 
+          update: { 
+            ...(firstName && { firstName }),
+            ...(lastName && { lastName }),
+            ...(email && { email })
+          }
         }
       },
       create: { 
@@ -111,7 +116,7 @@ const updateAvatar = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Profile picture updated successfully",
-      url: updatedProfile.avatarUrl
+      data: updatedProfile.avatarUrl
     });
   } catch (error) {
     console.error("PRISMA/CLOUDINARY ERROR:", error); 

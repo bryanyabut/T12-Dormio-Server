@@ -220,6 +220,8 @@ model MaintenanceRequest {
   description String
   urgency     UrgencyLevel
   status      RequestStatus @default(PENDING)
+  imageUrl    String?       @map("image_url")
+  adminComment String?       @map("admin_comment")
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
   resolvedAt  DateTime?     @map("resolved_at")

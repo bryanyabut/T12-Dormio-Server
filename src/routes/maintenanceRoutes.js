@@ -3,6 +3,7 @@ const router = express.Router();
 
 const { maintenanceRules } = require('../validators/maintenanceValidator');
 const validate = require('../middleware/validate');
+const upload = require('../middleware/uploadMiddleware');
 
 const { authenticateToken, requireAdmin } = require('../middleware/authMiddleware');
 const { getMaintenanceR, 
@@ -13,12 +14,12 @@ const { getMaintenanceR,
     deleteMaintenanceR, 
     updateMaintenanceR,
     getMaintenanceMyRequests
-} = require('../controllers/maintenanceCotroller');
+} = require('../controllers/maintenanceController');
 
 // Maintenance routes
 // student routes
-router.post('/create', authenticateToken, maintenanceRules, validate, createMaintenanceR);
-router.put('/student/:id', authenticateToken, updateMaintenanceR);
+router.post('/create', authenticateToken, upload.single('image'), maintenanceRules, validate, createMaintenanceR);
+router.put('/student/:id', authenticateToken, upload.single('image'), updateMaintenanceR);
 router.get('/myReq', authenticateToken, getMaintenanceMyRequests);
 router.get('/myReq/:id', authenticateToken, getMyMaintenanceRById);
 

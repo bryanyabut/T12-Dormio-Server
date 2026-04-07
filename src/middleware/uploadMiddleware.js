@@ -10,10 +10,16 @@ cloudinary.config({
 
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: {
-    folder: 'dormio_avatars',
-    allowed_formats: ['jpg', 'png', 'jpeg'],
-  },
+  params: async (req, file) => {
+
+    const folderName = req.originalUrl.includes('maintenance') ? 'dormio_maintenance' : 'dormio_avatars';
+
+    return {
+      folder: folderName,
+      allowed_formats: ['jpg', 'png', 'jpeg'],
+      public_id: `${Date.now()}-${file.originalname.split('.')[0]}`,
+    };
+  }
 });
 
 const upload = multer({ storage: storage });

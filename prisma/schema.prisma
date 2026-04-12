@@ -98,7 +98,7 @@ model Chore {
   createdAt   DateTime    @default(now()) @map("created_at")
   updatedAt   DateTime    @default(now()) @updatedAt @map("updated_at")
 
-  completedByUser  User?  @relation(fields: [completedByUserId], references: [id])
+  completedByUser  User?  @relation("ChoreCompletedBy", fields: [completedByUserId], references: [id])
   choreAssignments ChoreAssignment[]
 
   @@map("chores")
@@ -260,6 +260,7 @@ model User {
   // Relations
   address             Address?             @relation(fields: [addressId], references: [id])
   userMealPlans       UserMealPlan[]
+  choresCompleted     Chore[]              @relation("ChoreCompletedBy")
   choreAssignments    ChoreAssignment[]
   budgets             Budget[]
   expenses            Expense[]

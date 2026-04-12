@@ -3,34 +3,94 @@ const asyncHandler = require("../middleware/asyncHandler");
 const SearchFilter = require('../utils/searchFilter');
 
 // GET all chores
-// route: GET /api/chores
-exports.getAllChores = asyncHandler(async (req, res) => {
-    const fields = ['choreName', 'description', 'user.firstName', 'user.lastName'];
-    
-    const { where, skip, take, orderBy } = SearchFilter(req, fields);
+// route: GET /api/chores/dashboard
+exports.getChoreDashboard = asyncHandler(async (req, res) => {
 
-    const chores = await prisma.choreAssignment.findMany({
-        where,
-        skip,
-        take,
-        orderBy,
-        include: { 
-            user: {
-                include: { profile: true }
-            } 
+    console.log("User from middleware: ", req.user);
+
+    const userId = req.user?.userId;
+
+    if (!userId) {
+        console.error("DEBUG: req.user is:", req.user);
+        return res.status(401).json({ 
+            success: false, 
+            message: "User ID not found. Authentication context missing." 
+        });
+    }
+
+    const dashboardData = await prisma.user.findUnique({
+        where: { id: parseInt(userId) },
+        select: {
+            firstName: true,
+            choreAssignments: {
+                include: {
+                    chore: {
+                        include: {
+                            choreAssignments: {
+                                include: {
+                                    user: {
+                                        select: {
+                                            id: true,
+                                            firstName: true,
+                                            lastName: true,
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     });
 
-    const total = await prisma.choreAssignment.count({ where });
+    if (!dashboardData) {
+        return res.status(404).json({ message: 'User not found' });
+    }
+
+    const chores = dashboardData.choreAssignments.map((assignment) => {
+        const chore = assignment.chore;
+        const choreDate = new Date(chore.dueDate);
+        const todayDate = new Date();
+        todayDate.setHours(0, 0, 0, 0);
+    
+        return {
+            id: chore.id,
+            name: chore.choreName,
+            description: chore.description,
+            dueDate: chore.dueDate,
+            status: chore.status,
+            isDueToday: choreDate.toDateString() === todayDate.toDateString(),
+            isOverdue: choreDate < todayDate && chore.status !== 'COMPLETED',
+            assignedUsers: chore.choreAssignments.map(ca => {
+                const fInitial = ca.user.firstName ? ca.user.firstName[0] : '?';
+                const lInitial = ca.user.lastName ? ca.user.lastName[0] : '?';
+            
+                return {
+                    id: ca.user.id,
+                    initials: `${fInitial}${lInitial}`.toUpperCase()
+                };
+            })
+        };
+    });
+
+    const totalChores = chores.length;
+    const completedChores = chores.filter(chore => chore.status === 'COMPLETED').length;
+    const choresLeft = totalChores - completedChores;
 
     res.status(200).json({
         success: true,
-        message: 'Chores retrieved successfully',
-        data: chores,
-        meta: {
-            total,
-            page: parseInt(req.query.page) || 1,
-            limit: take
+        data: {
+            greeting: `Good day, ${dashboardData.firstName}!`,
+            todayChores: chores,
+            stats: {
+                choresLeft,
+                totalChores,
+                completedChores,
+                progressMessage: `${completedChores} of ${totalChores} Chores Completed`,
+                percentComplete: totalChores > 0 ? (completedChores / totalChores) * 100 : 0
+            },
         }
     });
+
 });

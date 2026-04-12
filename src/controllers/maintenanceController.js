@@ -58,7 +58,7 @@ const getMaintenanceRById = asyncHandler(async (req, res, next) => {
 // update maintenance record status ADMIN
 const updateMaintenanceRStatus = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
-  const { status } = req.body;
+  const { status, adminComment } = req.body;
 
   const statusOptions = Object.values(RequestStatus);
   if (!status || !statusOptions.includes(status)) {
@@ -79,17 +79,31 @@ const updateMaintenanceRStatus = asyncHandler(async (req, res, next) => {
 
   const request = await prisma.maintenanceRequest.update({
     where: { id: parseInt(id) },
-    data: { status, resolvedAt },
-    include: { user: true },
+    data: { status, resolvedAt, adminComment },
+    include: {
+      user: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          deviceToken: true,
+          email: true,
+        }
+      }
+    },
   });
 
   if (request.user?.deviceToken) {
+    const notificationMessage = adminComment
+      ? `Update: ${adminComment}`
+      : `Your maintenance request "${request.title}" is now: ${request.status}.`;
+
     await sendNotificationToDevice(request.user.deviceToken, {
       type: "maintenance_update",
       request_id: request.id.toString(),
       status: request.status,
       title: `Maintenance Request Update`,
-      message: `Your maintenance request "${request.title}" is now: ${request.status}.`,
+      message: notificationMessage,
       user_id: request.user.id.toString(),
       user_firstName: request.user.firstName,
       user_lastName: request.user.lastName,
@@ -109,6 +123,8 @@ const updateMaintenanceRStatus = asyncHandler(async (req, res, next) => {
 const createMaintenanceR = asyncHandler(async (req, res, next) => {
   const { title, description, urgency } = req.body;
 
+  const imageUrl = req.file ? req.file.path : null;
+
   if (!title || !description || !urgency) {
     res.status(422);
     return next(new Error("Title, description, and urgency are required"));
@@ -119,6 +135,7 @@ const createMaintenanceR = asyncHandler(async (req, res, next) => {
       title,
       description,
       urgency,
+      imageUrl,
       user: {
         connect: {
           id: req.user.userId,
@@ -139,11 +156,13 @@ const createMaintenanceR = asyncHandler(async (req, res, next) => {
   });
   // Send notification to each admin with a valid device token
   for (const admin of admins) {
-    await sendNotificationToDevice(admin.deviceToken, {
-      type: "general_message",
-      title: "New Maintenance Request",
-      message: `A new maintenance request "${title}" created by: ${student.firstName} ${student.lastName}.`,
-    });
+    if (admin.deviceToken) {
+      await sendNotificationToDevice(admin.deviceToken, {
+        type: "general_message",
+        title: "New Maintenance Request",
+        message: `A new maintenance request "${title}" created by: ${student.firstName} ${student.lastName}.`,
+      });
+    }
   }
 
   res.status(201).json({ success: true, data: newRequest });
@@ -153,6 +172,8 @@ const createMaintenanceR = asyncHandler(async (req, res, next) => {
 const updateMaintenanceR = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
   const { title, description, urgency } = req.body;
+
+  const imageUrl = req.file ? req.file.path : undefined;
 
   const request = await prisma.maintenanceRequest.findUnique({
     where: {
@@ -176,6 +197,7 @@ const updateMaintenanceR = asyncHandler(async (req, res, next) => {
       ...(title && { title }),
       ...(description && { description }),
       ...(urgency && { urgency }),
+      ...(imageUrl && { imageUrl })
     },
   });
 
@@ -240,14 +262,25 @@ const getMyMaintenanceRById = asyncHandler(async (req, res, next) => {
 //Delete maintenance record
 const deleteMaintenanceR = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
-  const request = await prisma.maintenanceRequest.delete({
+
+  const request = await prisma.maintenanceRequest.findUnique({
     where: { id: parseInt(id) },
   });
 
-  if (!request) {
+  if(!request) {
     res.status(404);
     return next(new Error("Maintenance request not found"));
   }
+
+  if (request.userId !== req.user.userId && req.user.role !== "ADMIN") {
+    res.status(403);
+    return next(new Error("Unauthorized to delete this maintenance request"));
+  }
+
+  await prisma.maintenanceRequest.delete({
+    where: { id: parseInt(id) },
+  });
+
   res.status(200).json({ success: true, data: request });
 });
 

@@ -1,0 +1,135 @@
+const { prisma } = require("../config/db");
+
+/**
+ *  Get current student profile
+ *  GET /api/v1/profile
+ */
+const getProfile = async (req, res) => {
+  try {
+    const userId = req.user.id || req.user.userId;
+
+    const profile = await prisma.profile.findUnique({
+      where: { userId: parseInt(userId) },
+      include: {
+        user: {
+          select: {
+            email: true,
+            firstName: true,
+            lastName: true
+          }
+        }
+      }
+    });
+
+    if (!profile) {
+      return res.status(404).json({ success: false, message: "Profile not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: profile 
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ *  Create or Update student profile & sync User names
+ *  PUT /api/v1/profile
+ */
+const updateProfile = async (req, res) => {
+  const { studentId, firstName, lastName, roomNumber, email } = req.body;
+  const userId = req.user.id || req.user.userId;
+
+  try {
+    const result = await prisma.profile.upsert({
+      where: { userId: userId },
+      update: { 
+        studentId, 
+        roomNumber,
+        user: {
+          update: { 
+            ...(firstName && { firstName }),
+            ...(lastName && { lastName }),
+            ...(email && { email })
+          }
+        }
+      },
+      create: { 
+        studentId, 
+        roomNumber,
+        user: {
+          connect: { id: userId } 
+        }
+      },
+      include: {
+        user: {
+          select: {
+            email: true,
+            firstName: true,
+            lastName: true
+          }
+        } 
+      }
+    });
+
+    res.status(200).json({ 
+      success: true, 
+      message: "Profile and User details updated successfully", 
+      data: result 
+    });
+  } catch (error) {
+    if (error.code === 'P2002') {
+      const target = error.meta?.target || [];
+      if (target.includes('email')) {
+        return res.status(400).json({ success: false, message: "Email is already taken." });
+      }
+      if (target.includes('studentId')) {
+        return res.status(400).json({ success: false, message: "Student ID is already in use." });
+      }
+    }
+
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to sync profile: " + error.message 
+    });
+  }
+};
+
+const updateAvatar = async (req, res) => {
+  console.log("Multer File:", req.file); 
+  console.log("User from Token:", req.user);
+
+  try {
+    const userId = req.user.id || req.user.userId;
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "No file uploaded" });
+    }
+
+    const updatedProfile = await prisma.profile.update({
+      where: { userId: userId },
+      data: { avatarUrl: req.file.path }
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Profile picture updated successfully",
+      data: updatedProfile.avatarUrl
+    });
+  } catch (error) {
+    console.error("PRISMA/CLOUDINARY ERROR:", error); 
+    
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || "Internal Server Error" 
+    });
+  }
+};
+
+module.exports = { 
+  getProfile, 
+  updateProfile,
+  updateAvatar
+};

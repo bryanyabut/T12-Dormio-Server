@@ -87,19 +87,32 @@ model Budget {
   @@map("budgets")
 }
 
-model ChoreAssignment {
+model Chore {
   id          Int         @id @default(autoincrement())
-  userId      Int         @map("user_id")
   choreName   String      @map("chore_name")
   description String?
   dueDate     DateTime    @map("due_date")
   status      ChoreStatus @default(PENDING)
+  completedByUserId Int?  @map("completed_by_user_id")
+  completedAt DateTime?   @map("completed_at")
   createdAt   DateTime    @default(now()) @map("created_at")
   updatedAt   DateTime    @default(now()) @updatedAt @map("updated_at")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  completedByUser  User?  @relation(fields: [completedByUserId], references: [id])
+  choreAssignments ChoreAssignment[]
 
-  @@index([userId, dueDate])
+  @@map("chores")
+}
+
+model ChoreAssignment {
+  id          Int         @id @default(autoincrement())
+  choreId     Int         @map("chore_id")
+  userId      Int         @map("user_id")
+
+  chore       Chore       @relation(fields: [choreId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([choreId, userId])
   @@map("chore_assignments")
 }
 

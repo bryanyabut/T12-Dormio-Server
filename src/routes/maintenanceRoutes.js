@@ -1,10 +1,5 @@
 const express = require('express');
 const router = express.Router();
-
-const { maintenanceRules } = require('../validators/maintenanceValidator');
-const validate = require('../middleware/validate');
-const upload = require('../middleware/uploadMiddleware');
-
 const { authenticateToken, requireAdmin } = require('../middleware/authMiddleware');
 const { getMaintenanceR, 
     getMaintenanceRById, 
@@ -14,12 +9,12 @@ const { getMaintenanceR,
     deleteMaintenanceR, 
     updateMaintenanceR,
     getMaintenanceMyRequests
-} = require('../controllers/maintenanceController');
+} = require('../controllers/maintenanceCotroller');
 
 // Maintenance routes
 // student routes
-router.post('/create', authenticateToken, upload.single('image'), maintenanceRules, validate, createMaintenanceR);
-router.put('/student/:id', authenticateToken, upload.single('image'), updateMaintenanceR);
+router.post('/create', authenticateToken, createMaintenanceR);
+router.put('/student/:id', authenticateToken, updateMaintenanceR);
 router.get('/myReq', authenticateToken, getMaintenanceMyRequests);
 router.get('/myReq/:id', authenticateToken, getMyMaintenanceRById);
 

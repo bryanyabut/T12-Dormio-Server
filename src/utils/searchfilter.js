@@ -2,13 +2,7 @@ const SearchFilter = (req, searchField = []) => {
     const where = {};
     const AND = [];
     const OR = [];
-    let { search, page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'desc'} = req.query;
-
-    if (sortBy && sortBy.includes(':')) {
-        const [field, order] = sortBy.split(':');
-        sortBy = field;
-        sortOrder = order;
-    }
+    const { search, page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'desc'} = req.query;
 
     if (search &&  searchField.length > 0) {
         searchField.forEach(field => {

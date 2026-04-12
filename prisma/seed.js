@@ -636,38 +636,6 @@ async function main() {
     },
   })
 
-  await prisma.profile.upsert({
-  where: { userId: user1.id },
-  update: {},
-  create: {
-    studentId: "2026-001",
-    roomNumber: "A101",
-    avatarUrl: "https://example.com/avatar1.png",
-    userId: user1.id,
-  },
-})
-
-await prisma.profile.upsert({
-  where: { userId: user2.id },
-  update: {},
-  create: {
-    studentId: "2026-002",
-    roomNumber: "A101", // same room → roommates 👀
-    avatarUrl: "https://example.com/avatar2.png",
-    userId: user2.id,
-  },
-})
-
-await prisma.profile.upsert({
-  where: { userId: user3.id },
-  update: {},
-  create: {
-    studentId: "ADMIN-001",
-    roomNumber: null,
-    userId: user3.id,
-  },
-})
-
   console.log('Seeding was successful')
 }
 

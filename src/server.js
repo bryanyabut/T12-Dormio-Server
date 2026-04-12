@@ -11,8 +11,6 @@ const mealPlanningRoutes = require("./routes/mealPlanningRoutes");
 const { notFound, errorHandler} = require("./middleware/errorMiddleware");
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
-const profileRoutes = require('./routes/profile');
-const calendarRoutes = require('./routes/calendarRoutes');
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('../swagger');
@@ -44,8 +42,6 @@ app.use("/api/v1/maintenance", maintenanceRoutes);
 app.use("/api/v1/meal-plans", mealPlanningRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", userRoutes);
-app.use('/api/v1/profile', profileRoutes);
-app.use('/api/v1/calendar', calendarRoutes);
 
 
 //TODO:Error Handling Middleware

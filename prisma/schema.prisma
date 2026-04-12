@@ -214,17 +214,15 @@ model Schedule {
 }
 
 model MaintenanceRequest {
-  id           Int           @id @default(autoincrement())
-  userId       Int           @map("user_id")
-  title        String
-  description  String
-  urgency      UrgencyLevel
-  status       RequestStatus @default(PENDING)
-  imageUrl     String?       @map("image_url")
-  adminComment String?       @map("admin_comment")
-  createdAt    DateTime      @default(now()) @map("created_at")
-  updatedAt    DateTime      @updatedAt @map("updated_at")
-  resolvedAt   DateTime?     @map("resolved_at")
+  id          Int           @id @default(autoincrement())
+  userId      Int           @map("user_id")
+  title       String
+  description String
+  urgency     UrgencyLevel
+  status      RequestStatus @default(PENDING)
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  resolvedAt  DateTime?     @map("resolved_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -254,43 +252,9 @@ model User {
   billSharing         BillSharing[]
   schedules           Schedule[]
   maintenanceRequests MaintenanceRequest[]
-  events              Event[]
-  profile             Profile?
 
   @@index([email])
   @@map("users")
-}
-
-model Profile {
-  id         Int     @id @default(autoincrement())
-  studentId  String  @unique @map("student_id")
-  roomNumber String? @map("room_number")
-  avatarUrl  String? @map("avatar_url")
-
-  // Relation to User
-  userId Int  @unique @map("user_id")
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("profiles")
-}
-
-model Event {
-  id          String   @id @default(uuid())
-  title       String
-  description String?
-  startTime   DateTime @map("start_time")
-  endTime     DateTime @map("end_time")
-  category    String
-
-  userId Int  @map("user_id")
-  user   User @relation(fields: [userId], references: [id])
-
-  relatedId String? @map("related_id")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("events")
 }
 
 //Enums
@@ -370,3 +334,4 @@ enum Weekday {
   SAT
   SUN
 }
+

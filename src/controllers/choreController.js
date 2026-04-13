@@ -182,3 +182,42 @@ exports.getHousemates = asyncHandler(async (req, res) => {
         data: housemates
     });
 });
+
+
+// PATCH update chore status (mark as complete)
+// route: PATCH /api/v1/chores/:id/complete
+exports.completeChore = asyncHandler(async (req, res, next) => {
+    const { id } = req.params;
+    const userId = req.user.userId;
+
+    const chore = await prisma.chore.findUnique({
+        where: { id: parseInt(id) },
+        include: { choreAssignments: true }
+    });
+
+    if (!chore) {
+        res.status(404);
+        return next(new Error("Chore not found"));
+    }
+
+    const isAssigned = chore.choreAssignments.some(a => a.userId === userId);
+    if (!isAssigned && req.user.role !== 'ADMIN') {
+        res.status(403);
+        return next(new Error("You are not assigned to this chore"));
+    }
+
+    const updatedChore = await prisma.chore.update({
+        where: { id: parseInt(id) },
+        data: {
+            status: "COMPLETED",
+            completedByUserId: userId,
+            completedAt: new Date(),
+        },
+    });
+
+    res.status(200).json({
+        success: true,
+        message: "Chore marked as completed",
+        data: updatedChore
+    });
+});

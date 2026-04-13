@@ -4,11 +4,13 @@ const { authenticateToken, requireAdmin } = require('../middleware/authMiddlewar
 const { 
     getChoreDashboard,
     createChore,
-    getHousemates
+    getHousemates,
+    completeChore,
  } = require('../controllers/choreController');
 
 router.get('/dashboard', authenticateToken, getChoreDashboard);
 router.get('/housemates', authenticateToken, getHousemates);
 router.post('/', authenticateToken, createChore);
+router.patch('/:id/complete', authenticateToken, completeChore);
 
 module.exports = router;

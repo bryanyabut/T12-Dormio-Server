@@ -1,98 +1,97 @@
 const asyncHandler = require('../middleware/asyncHandler');
-const { PrismaClient } = require("../generated/prisma");
-const prisma = new PrismaClient();
+const { prisma } = require('../config/db');
 
-// @desc    Get all events for the logged-in user
+// @desc    Get all schedules for the logged-in user
 // @route   GET /api/v1/calendar
 exports.getEvents = asyncHandler(async (req, res) => {
-    const events = await prisma.event.findMany({
-        where: {
-            userId: Number(req.user.id || req.user.userId)
-        },
-        orderBy: {
-            startTime: 'asc'
-        }
+    const userId = req.user.userId;
+    const { startDate, endDate } = req.query;
+
+    const where = { userId };
+    if (startDate || endDate) {
+        where.startTime = {};
+        if (startDate) where.startTime.gte = new Date(startDate);
+        if (endDate) where.startTime.lte = new Date(endDate);
+    }
+
+    const schedules = await prisma.schedule.findMany({
+        where,
+        orderBy: { startTime: 'asc' },
     });
 
     res.status(200).json({
         success: true,
-        count: events.length,
-        data: events
+        count: schedules.length,
+        data: schedules,
     });
 });
 
 // @route   POST /api/v1/calendar
 exports.createEvent = asyncHandler(async (req, res) => {
-    const userIdValue = req.user.id || req.user.userId || (req.user.user && req.user.user.id);
+    const userId = req.user.userId;
+    const { title, type, description, startTime, endTime, location, courseCode, section } = req.body;
 
-    if (!userIdValue) {
-        return res.status(401).json({
-            success: false,
-            message: "User ID not found in token."
-        });
-    }
-
-    const event = await prisma.event.create({
+    const schedule = await prisma.schedule.create({
         data: {
-            title: req.body.title,
-            description: req.body.description,
-            startTime: new Date(req.body.startTime),
-            endTime: new Date(req.body.endTime),
-            category: req.body.category,
-            userId: Number(userIdValue), 
-            relatedId: req.body.relatedId || null
-        }
+            userId,
+            title,
+            type,
+            description: description || null,
+            startTime: new Date(startTime),
+            endTime: new Date(endTime),
+            location: location || null,
+            courseCode: courseCode || null,
+            section: section || null,
+        },
     });
 
     res.status(201).json({
         success: true,
-        data: event
+        data: schedule,
     });
 });
 
 // @route   PUT /api/v1/calendar/:id
 exports.updateEvent = asyncHandler(async (req, res) => {
-    let event = await prisma.event.findUnique({
-        where: { id: req.params.id }
-    });
+    const userId = req.user.userId;
+    const id = parseInt(req.params.id);
+    const { title, type, description, startTime, endTime, location, courseCode, section } = req.body;
 
-    if (!event) {
-        return res.status(404).json({ success: false, message: "Event not found" });
+    const existing = await prisma.schedule.findFirst({ where: { id, userId } });
+
+    if (!existing) {
+        return res.status(404).json({ success: false, message: 'Schedule not found.' });
     }
 
-    if (event.userId !== Number(req.user.id || req.user.userId)) {
-        return res.status(401).json({ success: false, message: "Not authorized" });
-    }
-
-    event = await prisma.event.update({
-        where: { id: req.params.id },
+    const schedule = await prisma.schedule.update({
+        where: { id },
         data: {
-            ...req.body,
-            startTime: req.body.startTime ? new Date(req.body.startTime) : event.startTime,
-            endTime: req.body.endTime ? new Date(req.body.endTime) : event.endTime,
-        }
+            ...(title && { title }),
+            ...(type && { type }),
+            ...(description !== undefined && { description }),
+            ...(startTime && { startTime: new Date(startTime) }),
+            ...(endTime && { endTime: new Date(endTime) }),
+            ...(location !== undefined && { location }),
+            ...(courseCode !== undefined && { courseCode }),
+            ...(section !== undefined && { section }),
+        },
     });
 
-    res.status(200).json({ success: true, data: event });
+    res.status(200).json({ success: true, data: schedule });
 });
 
 // @route   DELETE /api/v1/calendar/:id
 exports.deleteEvent = asyncHandler(async (req, res) => {
-    const event = await prisma.event.findUnique({
-        where: { id: req.params.id }
-    });
+    const userId = req.user.userId;
+    const id = parseInt(req.params.id);
 
-    if (!event) {
-        return res.status(404).json({ success: false, message: "Event not found" });
+    const existing = await prisma.schedule.findFirst({ where: { id, userId } });
+
+    if (!existing) {
+        return res.status(404).json({ success: false, message: 'Schedule not found.' });
     }
 
-    if (event.userId !== Number(req.user.id || req.user.userId)) {
-        return res.status(401).json({ success: false, message: "Not authorized" });
-    }
-
-    await prisma.event.delete({
-        where: { id: req.params.id }
-    });
+    await prisma.schedule.delete({ where: { id } });
 
     res.status(200).json({ success: true, data: {} });
 });

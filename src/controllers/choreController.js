@@ -56,7 +56,7 @@ exports.getChoreDashboard = asyncHandler(async (req, res) => {
     
         return {
             id: chore.id,
-            name: chore.choreName,
+            choreName: chore.choreName,
             description: chore.description,
             dueDate: chore.dueDate,
             status: chore.status,
@@ -93,4 +93,92 @@ exports.getChoreDashboard = asyncHandler(async (req, res) => {
         }
     });
 
+});
+
+
+// POST create a new chore
+// route: POST /api/v1/chores
+exports.createChore = asyncHandler(async (req, res) => {
+    const { name, description, dueDate, assignedUserIds } = req.body;
+
+    if (!name || !dueDate || !assignedUserIds || assignedUserIds.length === 0) {
+        return res.status(400).json({ 
+            success: false, 
+            message: "Please provide name, dueDate, and at least one assigned user." 
+        });
+    }
+
+    const newChore = await prisma.chore.create({
+        data: {
+            choreName: name, 
+            description: description,
+            dueDate: new Date(dueDate),
+            status: 'PENDING',
+            choreAssignments: {
+                create: assignedUserIds.map(userId => ({
+                    userId: parseInt(userId)
+                }))
+            }
+        },
+        include: {
+            choreAssignments: true
+        }
+    });
+
+    res.status(201).json({
+        success: true,
+        data: newChore
+    });
+});
+
+
+// GET all housemates/residents for assignment (Filtered by Building and Unit)
+// route: GET /api/v1/chores/housemates
+exports.getHousemates = asyncHandler(async (req, res) => {
+    const userId = req.user?.userId;
+
+    const currentUser = await prisma.user.findUnique({
+        where: { id: parseInt(userId) },
+        select: { 
+            addressId: true,
+            address: {
+                select: { unitNumber: true }
+            }
+        }
+    });
+
+    if (!currentUser || !currentUser.addressId) {
+        return res.status(400).json({ 
+            success: false, 
+            message: "User does not have an assigned address." 
+        });
+    }
+
+    const users = await prisma.user.findMany({
+        where: {
+            addressId: currentUser.addressId,
+            address: {
+                unitNumber: currentUser.address.unitNumber
+            }
+        },
+        select: {
+            id: true,
+            firstName: true,
+            lastName: true
+        },
+        orderBy: { firstName: 'asc' }
+    });
+    
+    const housemates = users.map(user => ({
+    id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName, 
+    initials: `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase()
+
+    }));
+
+    res.status(200).json({
+        success: true,
+        data: housemates
+    });
 });

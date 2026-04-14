@@ -261,8 +261,10 @@ model Profile {
   studentId  String  @unique @map("student_id")
   roomNumber String? @map("room_number")
   avatarUrl  String? @map("avatar_url")
-  userId     Int     @unique @map("user_id")
-  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Relation to User
+  userId Int  @unique @map("user_id")
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("profiles")
 }

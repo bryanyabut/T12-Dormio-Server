@@ -28,9 +28,11 @@ model Bill {
   billName      String         @map("title")
   totalAmount   Decimal        @map("amount") @db.Decimal(10, 2)
   dueDate       DateTime       @map("due_date") @db.Date
+  category      ExpenseCategory?
   status        BillStatus     @default(UNPAID)
   createdAt     DateTime       @default(now()) @map("created_at")
   updatedAt     DateTime       @default(now()) @updatedAt @map("updated_at")
+
   billReminders BillReminder[]
   billSharing   BillSharing[]
   user          User           @relation(fields: [userId], references: [id])

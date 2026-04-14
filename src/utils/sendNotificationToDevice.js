@@ -19,7 +19,7 @@ const sendNotificationToDevice = async (deviceToken, title, body, extraData = {}
       android: {
         priority: 'high',
         notification: {
-          channelId: 'default_channel_id', 
+          channelId: 'maintenance_channel', 
           sound: 'default'
         },
       },

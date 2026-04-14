@@ -221,3 +221,97 @@ exports.completeChore = asyncHandler(async (req, res, next) => {
         data: updatedChore
     });
 });
+
+// PUT update chore details
+// route: PUT /api/v1/chores/:id
+exports.updateChore = asyncHandler(async (req, res, next) => {
+    const { id } = req.params;
+    const { name, description, dueDate, assignedUserIds } = req.body;
+
+    const chore = await prisma.chore.findUnique({
+        where: { id: parseInt(id) },
+        include: { choreAssignments: true }
+    });
+
+    if (!chore) {
+        res.status(404);
+        return next(new Error("Chore not found"));
+    }
+
+    const isAssigned = chore.choreAssignments.some(a => a.userId === req.user.userId);
+    
+    if (!isAssigned && req.user.role !== 'ADMIN') {
+        res.status(403);
+        return next(new Error("You do not have permission to edit this chore"));
+    }
+
+    const updatedChore = await prisma.chore.update({
+        where: { id: parseInt(id) },
+        data: {
+            choreName: name,
+            description: description,
+            dueDate: dueDate ? new Date(dueDate) : undefined,
+  
+            choreAssignments: assignedUserIds ? {
+                deleteMany: {},
+                create: assignedUserIds.map(userId => ({
+                    userId: parseInt(userId)
+                }))
+            } : undefined
+        },
+        include: {
+            choreAssignments: true
+        }
+    });
+
+    res.status(200).json({
+        success: true,
+        message: "Chore updated successfully",
+        data: updatedChore
+    });
+});
+
+// GET a single chore by ID
+// route: GET /api/v1/chores/:id
+exports.getChoreById = asyncHandler(async (req, res, next) => {
+    const { id } = req.params;
+
+    const chore = await prisma.chore.findUnique({
+        where: { id: parseInt(id) },
+        include: {
+            choreAssignments: {
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            firstName: true,
+                            lastName: true
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    if (!chore) {
+        res.status(404);
+        return next(new Error("Chore not found"));
+    }
+
+    const formattedChore = {
+        id: chore.id,
+        choreName: chore.choreName,
+        description: chore.description,
+        dueDate: chore.dueDate,
+        status: chore.status,
+        assignedUsers: chore.choreAssignments.map(ca => ({
+            id: ca.user.id,
+            initials: `${ca.user.firstName?.[0] || ''}${ca.user.lastName?.[0] || ''}`.toUpperCase()
+        }))
+    };
+
+    res.status(200).json({
+        success: true,
+        data: formattedChore
+    });
+});

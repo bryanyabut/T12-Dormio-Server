@@ -597,44 +597,68 @@ async function main() {
     },
   })
 
-  await prisma.choreAssignment.upsert({
+  const chore1 = await prisma.chore.upsert({
     where: { id: 1 },
     update: {},
     create: {
       id: 1,
-      userId: user1.id,
       choreName: 'Vacuum',
       description: 'Vacuum the living room',
       dueDate: new Date('2026-03-10'),
       status: ChoreStatus.PENDING,
     },
-  })
+  });
 
-  await prisma.choreAssignment.upsert({
+  const chore2 = await prisma.chore.upsert({
     where: { id: 2 },
     update: {},
     create: {
       id: 2,
-      userId: user2.id,
       choreName: 'Dishes',
       description: 'Clean the pile of dirty dishes in sink',
       dueDate: new Date('2026-01-11'),
       status: ChoreStatus.COMPLETED,
     },
-  })
+  });
 
-  await prisma.choreAssignment.upsert({
+  const chore3 = await prisma.chore.upsert({
     where: { id: 3 },
     update: {},
     create: {
       id: 3,
-      userId: user1.id,
       choreName: 'Take Out Trash',
       description: 'Take bins to the curb',
-      dueDate: new Date('2024-01-12'),
+      dueDate: new Date('2026-01-12'),
       status: ChoreStatus.PENDING,
     },
-  })
+  });
+
+  await prisma.choreAssignment.upsert({
+    where: { choreId_userId: { choreId: 1, userId: user1.id } },
+    update: {},
+    create: {
+      choreId: 1,
+      userId: user1.id,
+    },
+  });
+
+  await prisma.choreAssignment.upsert({
+    where: { choreId_userId: { choreId: 2, userId: user2.id } },
+    update: {},
+    create: {
+      choreId: 2,
+      userId: user2.id,
+    },
+  });
+
+  await prisma.choreAssignment.upsert({
+    where: { choreId_userId: { choreId: 3, userId: user1.id } },
+    update: {},
+    create: {
+      choreId: 3,
+      userId: user1.id,
+    },
+  });
 
   await prisma.profile.upsert({
   where: { userId: user1.id },

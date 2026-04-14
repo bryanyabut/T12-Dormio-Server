@@ -94,21 +94,17 @@ const updateMaintenanceRStatus = asyncHandler(async (req, res, next) => {
   });
 
   if (request.user?.deviceToken) {
-    const notificationMessage = adminComment
-      ? `Update: ${adminComment}`
-      : `Your maintenance request "${request.title}" is now: ${request.status}.`;
+    const title = `Maintenance Request Update`;
+    const body = adminComment 
+      ? `Update: ${adminComment}` 
+      : `Your request "${request.title}" is now: ${request.status}.`;
 
-    await sendNotificationToDevice(request.user.deviceToken, {
+    const extraData = {
       type: "maintenance_update",
       request_id: request.id.toString(),
       status: request.status,
-      title: `Maintenance Request Update`,
-      message: notificationMessage,
-      user_id: request.user.id.toString(),
-      user_firstName: request.user.firstName,
-      user_lastName: request.user.lastName,
-      user_email: request.user.email,
-    });
+    };
+    await sendNotificationToDevice(request.user.deviceToken, title, body, extraData);
   }
 
   if (!request) {
@@ -154,13 +150,17 @@ const createMaintenanceR = asyncHandler(async (req, res, next) => {
   const student = await prisma.user.findUnique({
     where: { id: req.user.userId },
   });
-  // Send notification to each admin with a valid device token
+
+  const studentName = student ? `${student.firstName} ${student.lastName}` : "A student";
+
   for (const admin of admins) {
     if (admin.deviceToken) {
-      await sendNotificationToDevice(admin.deviceToken, {
+      const notificationTitle = "New Maintenance Request";
+      const notificationBody = `A new request "${title}" was created by ${studentName}.`;
+
+      sendNotificationToDevice(admin.deviceToken, notificationTitle, notificationBody, { 
         type: "general_message",
-        title: "New Maintenance Request",
-        message: `A new maintenance request "${title}" created by: ${student.firstName} ${student.lastName}.`,
+        requestId: newRequest.id.toString() 
       });
     }
   }

@@ -189,6 +189,7 @@ const getMyShares = asyncHandler(async (req, res) => {
       bill: {
         include: { user: { select: { id: true, firstName: true, lastName: true, email: true } } },
       },
+      user: { select: { id: true, firstName: true, lastName: true, email: true } },
     },
     orderBy: { bill: { dueDate: 'asc' } },
   });

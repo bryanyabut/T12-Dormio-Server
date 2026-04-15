@@ -247,6 +247,7 @@ model User {
   choresCompleted     Chore[]              @relation("ChoreCompletedBy")
   expenses            Expense[]
   maintenanceRequests MaintenanceRequest[]
+  notifications       Notification[]
   profile             Profile?
   schedules           Schedule[]
   userMealPlans       UserMealPlan[]
@@ -267,6 +268,20 @@ model Profile {
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("profiles")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  title     String
+  message   String
+  type      String   
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("notifications")
 }
 
 enum UserRole {

@@ -12,6 +12,21 @@ exports.createExpenseRules = [
   body('category')
     .optional()
     .isIn(EXPENSE_CATEGORIES).withMessage(`Category must be one of: ${EXPENSE_CATEGORIES.join(', ')}`),
+  body('splitWithRoommates')
+    .optional()
+    .isBoolean().withMessage('splitWithRoommates must be a boolean'),
+  body('dueDate')
+    .optional()
+    .isISO8601().withMessage('Due date must be a valid date'),
+  body('shares')
+    .optional()
+    .isArray({ min: 1 }).withMessage('Shares must be a non-empty array when splitWithRoommates is true'),
+  body('shares.*.userId')
+    .optional()
+    .isInt().withMessage('Each share userId must be an integer'),
+  body('shares.*.shareAmount')
+    .optional()
+    .isDecimal().withMessage('Each shareAmount must be a valid decimal'),
 ];
 
 exports.updateExpenseRules = [

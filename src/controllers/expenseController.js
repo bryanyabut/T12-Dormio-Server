@@ -3,7 +3,7 @@ const asyncHandler = require('../middleware/asyncHandler');
 
 const createExpense = asyncHandler(async (req, res) => {
   const userId = req.user.userId;
-  const { description, amount, category, expenseDate } = req.body;
+  const { description, amount, category, expenseDate, splitWithRoommates, shares, dueDate } = req.body;
 
   const expense = await prisma.expense.create({
     data: {
@@ -15,7 +15,44 @@ const createExpense = asyncHandler(async (req, res) => {
     },
   });
 
-  res.status(201).json({ message: 'Expense created successfully.', expense });
+  let bill = null;
+  let billShares = null;
+
+  if (splitWithRoommates && shares && shares.length > 0) {
+    bill = await prisma.bill.create({
+      data: {
+        userId,
+        billName: description,
+        totalAmount: amount,
+        dueDate: dueDate ? new Date(dueDate) : new Date(expenseDate),
+        category: category || null,
+      },
+    });
+
+    billShares = await prisma.$transaction(
+      shares.map((share) =>
+        prisma.billSharing.create({
+          data: {
+            billId: bill.id,
+            userId: share.userId,
+            shareAmount: share.shareAmount,
+          },
+        })
+      )
+    );
+
+    await prisma.bill.update({
+      where: { id: bill.id },
+      data: { status: 'PARTIALLY_PAID' },
+    });
+  }
+
+  res.status(201).json({
+    message: splitWithRoommates ? 'Expense created and bill split successfully.' : 'Expense created successfully.',
+    expense,
+    bill,
+    billShares,
+  });
 });
 
 const getMyExpenses = asyncHandler(async (req, res) => {

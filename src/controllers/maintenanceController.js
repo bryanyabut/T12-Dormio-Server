@@ -101,10 +101,15 @@ const updateMaintenanceRStatus = asyncHandler(async (req, res, next) => {
 
     const extraData = {
       type: "maintenance_update",
-      request_id: request.id.toString(),
+      REQUEST_ID: request.id.toString(),
       status: request.status,
     };
-    await sendNotificationToDevice(request.user.deviceToken, title, body, extraData);
+    await sendNotificationToDevice({
+      token: request.user.deviceToken,
+      title: title,
+      body: body,
+      data: extraData
+    });
   }
 
   if (!request) {
@@ -153,17 +158,22 @@ const createMaintenanceR = asyncHandler(async (req, res, next) => {
 
   const studentName = student ? `${student.firstName} ${student.lastName}` : "A student";
 
-  for (const admin of admins) {
-    if (admin.deviceToken) {
-      const notificationTitle = "New Maintenance Request";
-      const notificationBody = `A new request "${title}" was created by ${studentName}.`;
+for (const admin of admins) {
+  if (admin.deviceToken) {
+    const notificationTitle = "New Maintenance Request";
+    const notificationBody = `A new request "${title}" was created by ${studentName}.`;
 
-      sendNotificationToDevice(admin.deviceToken, notificationTitle, notificationBody, { 
-        type: "general_message",
-        requestId: newRequest.id.toString() 
-      });
-    }
+    sendNotificationToDevice({
+      token: admin.deviceToken,
+      title: notificationTitle,
+      body: notificationBody,
+      data: { 
+        type: "maintenance_request",
+        REQUEST_ID: newRequest.id.toString() 
+      }
+    });
   }
+}
 
   res.status(201).json({ success: true, data: newRequest });
 });

@@ -1,20 +1,20 @@
 const admin = require('../config/firebase');
 
-const sendNotificationToDevice = async (deviceToken, title, body, extraData = {}) => {
-  if (!deviceToken) {
+const sendNotificationToDevice = async ({token, title, body, data = {}}) => {
+  if (!token) {
     console.warn('Skipping notification: No device token provided.');
     return;
   }
 
   try {
     await admin.messaging().send({
-      token: deviceToken,
+      token: token,
       notification: {
         title: title,
         body: body,
       },
       data: Object.fromEntries(
-        Object.entries(extraData).map(([key, value]) => [key, value.toString()])
+        Object.entries(data).map(([key, value]) => [key, value.toString()])
       ),
       android: {
         priority: 'high',
@@ -25,7 +25,7 @@ const sendNotificationToDevice = async (deviceToken, title, body, extraData = {}
       },
     });
 
-    console.log('Notification sent successfully to:', deviceToken);
+    console.log('Notification sent successfully to:', token);
   } catch (error) {
     console.error('Error sending notification:', error);
   }

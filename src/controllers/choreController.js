@@ -1,6 +1,7 @@
 const { prisma } = require('../config/db');
 const asyncHandler = require("../middleware/asyncHandler");
 const SearchFilter = require('../utils/searchFilter');
+const sendNotificationToDevice = require('../utils/sendNotificationToDevice');
 
 // GET all chores
 // route: GET /api/chores/dashboard
@@ -121,7 +122,27 @@ exports.createChore = asyncHandler(async (req, res) => {
             }
         },
         include: {
-            choreAssignments: true
+            choreAssignments: {
+                include: {
+                    user: true
+                }
+            }
+        }
+    });
+
+    newChore.choreAssignments.forEach(assignment => {
+        if (assignment.user && assignment.user.deviceToken) {
+            const payload = {
+                token: assignment.user.deviceToken,
+                title: "🧹 New Chore Assigned!",
+                body: `Hi ${assignment.user.firstName}, you have a new chore: ${name}`,
+                data: {
+                    type: "chore_assignment",
+                    CHORE_ID: newChore.id.toString(),
+                    status: "PENDING"
+                }
+            };
+            sendNotificationToDevice(payload).catch(err => console.error("FCM Error:", err));
         }
     });
 
@@ -260,7 +281,27 @@ exports.updateChore = asyncHandler(async (req, res, next) => {
             } : undefined
         },
         include: {
-            choreAssignments: true
+            choreAssignments: {
+                include: {
+                    user: true
+                }
+            }
+        }
+    });
+
+    updatedChore.choreAssignments.forEach(assignment => {
+        if (assignment.user && assignment.user.deviceToken) {
+            const payload = {
+                token: assignment.user.deviceToken,
+                title: "📝 Chore Updated",
+                body: `The details for "${name || updatedChore.choreName}" have been updated.`,
+                data: {
+                    type: "chore_update",
+                    CHORE_ID: id.toString(),
+                    status: updatedChore.status
+                }
+            };
+            sendNotificationToDevice(payload).catch(err => console.error("FCM Error:", err));
         }
     });
 

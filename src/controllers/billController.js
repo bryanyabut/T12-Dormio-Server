@@ -236,6 +236,88 @@ const markShareAsPaid = asyncHandler(async (req, res) => {
   res.json({ message: 'Share marked as paid.', share: updatedShare });
 });
 
+const getBalanceSummary = asyncHandler(async (req, res) => {
+  const userId = req.user.userId;
+
+  // Get all bills created by this user with unpaid shares
+  const billsOwned = await prisma.bill.findMany({
+    where: { userId },
+    include: {
+      billSharing: {
+        where: { hasPaid: false },
+        include: { user: { select: { id: true, firstName: true, lastName: true, email: true } } },
+      },
+    },
+  });
+
+  // Get all unpaid shares for this user (bills they owe money on)
+  const sharesOwed = await prisma.billSharing.findMany({
+    where: { userId, hasPaid: false },
+    include: {
+      bill: {
+        include: { user: { select: { id: true, firstName: true, lastName: true, email: true } } },
+      },
+    },
+  });
+
+  // Calculate total owed to user (from their bills where others haven't paid)
+  const totalOwedToYou = billsOwned.reduce((sum, bill) => {
+    return sum + bill.billSharing.reduce((shareSum, share) => shareSum + Number(share.shareAmount), 0);
+  }, 0);
+
+  // Calculate total user owes (from their unpaid shares)
+  const totalYouOwe = sharesOwed.reduce((sum, share) => sum + Number(share.shareAmount), 0);
+
+  // Calculate net balance per roommate
+  const roommateBalances = {};
+
+  // Add amounts others owe to you
+  billsOwned.forEach((bill) => {
+    bill.billSharing.forEach((share) => {
+      const key = share.user.id;
+      if (!roommateBalances[key]) {
+        roommateBalances[key] = {
+          user: share.user,
+          owesYou: 0,
+          youOwe: 0,
+          netBalance: 0,
+        };
+      }
+      roommateBalances[key].owesYou += Number(share.shareAmount);
+    });
+  });
+
+  // Add amounts you owe to others
+  sharesOwed.forEach((share) => {
+    const key = share.bill.user.id;
+    if (!roommateBalances[key]) {
+      roommateBalances[key] = {
+        user: share.bill.user,
+        owesYou: 0,
+        youOwe: 0,
+        netBalance: 0,
+      };
+    }
+    roommateBalances[key].youOwe += Number(share.shareAmount);
+  });
+
+  // Calculate net balance for each roommate
+  Object.keys(roommateBalances).forEach((key) => {
+    const balance = roommateBalances[key];
+    balance.netBalance = balance.owesYou - balance.youOwe;
+  });
+
+  // Convert to array and sort by net balance (descending - people who owe you the most first)
+  const roommateBalancesArray = Object.values(roommateBalances).sort((a, b) => b.netBalance - a.netBalance);
+
+  res.json({
+    totalOwedToYou,
+    totalYouOwe,
+    netBalance: totalOwedToYou - totalYouOwe,
+    roommateBalances: roommateBalancesArray,
+  });
+});
+
 module.exports = {
   createBill,
   getMyBills,
@@ -246,4 +328,5 @@ module.exports = {
   getSharesForBill,
   getMyShares,
   markShareAsPaid,
+  getBalanceSummary,
 };

@@ -17,11 +17,13 @@ const {
   getSharesForBill,
   getMyShares,
   markShareAsPaid,
+  getBalanceSummary,
 } = require('../controllers/billController');
 
 router.post('/', authenticateToken, createBillRules, validate, createBill);
 router.get('/', authenticateToken, getMyBills);
 router.get('/my-shares', authenticateToken, getMyShares);
+router.get('/summary/balance', authenticateToken, getBalanceSummary);
 router.get('/:id', authenticateToken, getBillById);
 router.put('/:id', authenticateToken, updateBillRules, validate, updateBill);
 router.delete('/:id', authenticateToken, deleteBill);

@@ -71,7 +71,6 @@ const updateMaintenanceRStatus = asyncHandler(async (req, res, next) => {
   let resolvedAt = status === "RESOLVED" ? new Date() : null;
 
   const result = await prisma.$transaction(async (tx) => {
-    // 2. Update the maintenance request
     const request = await tx.maintenanceRequest.update({
       where: { id: parseInt(id) },
       data: { status, resolvedAt, adminComment },

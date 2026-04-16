@@ -75,17 +75,17 @@ async function main() {
   const hashPassUser2 = await bcrypt.hash('pass456', 10);
 
   const user2 = await prisma.user.upsert({
-    where: { email: 'bob.smith@example.com' },
-    update: {},
-    create: {
-      firstName: 'Bob',
-      lastName: 'Smith',
-      email: 'bob.smith@example.com',
-      passwordHash: hashPassUser2,
-      role: UserRole.STUDENT,
-      addressId: address2.id,
-    },
-  })
+  where: { email: 'bob.smith@example.com' },
+  update: {},
+  create: {
+    firstName: 'Bob',
+    lastName: 'Smith',
+    email: 'bob.smith@example.com',
+    passwordHash: hashPassUser2,
+    role: UserRole.STUDENT,
+    addressId: address1.id,
+  },
+})
 
   const hashPassAdmin = await bcrypt.hash('adminpass', 10);
 
@@ -892,6 +892,15 @@ await prisma.profile.upsert({
     userId: user3.id,
   },
 })
+
+  // Reset auto-increment sequences after the seeding with hardcoded ids
+  //TODO : Check if necessary to add for other seeded categories
+  await prisma.$executeRawUnsafe(`SELECT setval('expenses_id_seq', (SELECT MAX(id) FROM expenses))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('bills_id_seq', (SELECT MAX(id) FROM bills))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('bill_sharing_id_seq', (SELECT MAX(id) FROM bill_sharing))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('bill_reminders_id_seq', (SELECT MAX(id) FROM bill_reminders))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('budgets_id_seq', (SELECT MAX(id) FROM budgets))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('profiles_id_seq', (SELECT MAX(id) FROM profiles))`)
 
   console.log('Seeding was successful')
 }

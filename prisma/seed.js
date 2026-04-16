@@ -188,6 +188,207 @@ async function main() {
     },
   })
 
+  const mealItem4 = await prisma.mealItem.upsert({
+    where: { id: 4 },
+    update: {},
+    create: {
+      id: 4,
+      name: 'Oatmeal with Berries',
+      description: 'Warm oats topped with fresh blueberries and honey',
+      category: MealType.BREAKFAST,
+    },
+  })
+
+  const mealItem5 = await prisma.mealItem.upsert({
+    where: { id: 5 },
+    update: {},
+    create: {
+      id: 5,
+      name: 'Beef Tacos',
+      description: 'Three soft shell tacos with ground beef, lettuce, and cheese',
+      category: MealType.DINNER,
+    },
+  })
+
+  const mealItem6 = await prisma.mealItem.upsert({
+    where: { id: 6 },
+    update: {},
+    create: {
+      id: 6,
+      name: 'Classic Caesar Salad',
+      description: 'Romaine lettuce with croutons, parmesan, and Caesar dressing',
+      category: MealType.LUNCH,
+    },
+  })
+
+  const mealItem7 = await prisma.mealItem.upsert({
+    where: { id: 7 },
+    update: {},
+    create: {
+      id: 7,
+      name: 'Grilled Salmon Steak',
+      description: 'Fresh Atlantic salmon with asparagus and lemon butter',
+      category: MealType.DINNER,
+    },
+  });
+
+  const mealItem8 = await prisma.mealItem.upsert({
+    where: { id: 8 },
+    update: {},
+    create: {
+      id: 8,
+      name: 'Eggs Benedict',
+      description: 'Poached eggs on English muffins with hollandaise sauce',
+      category: MealType.BREAKFAST,
+    },
+  });
+
+  const mealItem9 = await prisma.mealItem.upsert({
+    where: { id: 9 },
+    update: {},
+    create: {
+      id: 9,
+      name: 'Lobster Roll',
+      description: 'Chunky lobster meat in a toasted buttery bun',
+      category: MealType.LUNCH,
+    },
+  });
+
+  const mealItem10 = await prisma.mealItem.upsert({
+    where: { id: 10 },
+    update: {},
+    create: {
+      id: 10,
+      name: 'Mushroom Risotto',
+      description: 'Creamy Arborio rice with sautéed mushrooms and parmesan',
+      category: MealType.DINNER,
+    },
+  });
+
+  //basic schedule
+  const basicSchedule = [
+    // Monday
+    { day: Weekday.MON, meal: MealType.BREAKFAST, item: mealItem4 }, // Oatmeal
+    { day: Weekday.MON, meal: MealType.LUNCH, item: mealItem1 },     // Chicken
+    // Tuesday
+    { day: Weekday.TUE, meal: MealType.LUNCH, item: mealItem6 },     // Caesar Salad
+    { day: Weekday.TUE, meal: MealType.DINNER, item: mealItem5 },    // Tacos
+    // Wednesday
+    { day: Weekday.WED, meal: MealType.BREAKFAST, item: mealItem3 }, // Crepes
+    { day: Weekday.WED, meal: MealType.DINNER, item: mealItem2 },    // Stir Fry
+    // Thursday
+    { day: Weekday.THU, meal: MealType.LUNCH, item: mealItem1 },     // Chicken
+    { day: Weekday.THU, meal: MealType.DINNER, item: mealItem5 },    // Tacos
+    // Friday
+    { day: Weekday.FRI, meal: MealType.BREAKFAST, item: mealItem4 }, // Oatmeal
+    { day: Weekday.FRI, meal: MealType.LUNCH, item: mealItem6 },     // Caesar Salad
+  ];
+
+  for (const entry of basicSchedule) {
+    await prisma.mealPlanTemplate.upsert({
+      where: {
+        mealPlanTypeId_dayOfWeek_mealType: {
+          mealPlanTypeId: mealPlanType1.id,
+          dayOfWeek: entry.day,
+          mealType: entry.meal,
+        },
+      },
+      update: {},
+      create: {
+        mealPlanTypeId: mealPlanType1.id,
+        dayOfWeek: entry.day,
+        mealType: entry.meal,
+        mealItemId: entry.item.id,
+      },
+    });
+  }
+
+  // premium schedule
+  const premiumSchedule = [
+    // Monday
+    { day: Weekday.MON, meal: MealType.BREAKFAST, item: mealItem8 }, // Eggs Benedict
+    { day: Weekday.MON, meal: MealType.LUNCH, item: mealItem9 },     // Lobster Roll
+    { day: Weekday.MON, meal: MealType.DINNER, item: mealItem7 },    // Salmon
+    // Tuesday
+    { day: Weekday.TUE, meal: MealType.BREAKFAST, item: mealItem3 }, // Crepes
+    { day: Weekday.TUE, meal: MealType.LUNCH, item: mealItem1 },     // Chicken
+    { day: Weekday.TUE, meal: MealType.DINNER, item: mealItem5 },    // Tacos
+    // Wednesday
+    { day: Weekday.WED, meal: MealType.BREAKFAST, item: mealItem8 }, // Eggs Benedict
+    { day: Weekday.WED, meal: MealType.LUNCH, item: mealItem9 },     // Lobster Roll
+    { day: Weekday.WED, meal: MealType.DINNER, item: mealItem7 },    // Salmon
+    // Thursday
+    { day: Weekday.THU, meal: MealType.BREAKFAST, item: mealItem4 }, // Oatmeal
+    { day: Weekday.THU, meal: MealType.LUNCH, item: mealItem6 },     // Caesar Salad
+    { day: Weekday.THU, meal: MealType.DINNER, item: mealItem2 },    // Stir Fry
+    // Friday
+    { day: Weekday.FRI, meal: MealType.BREAKFAST, item: mealItem8 }, // Eggs Benedict
+    { day: Weekday.FRI, meal: MealType.LUNCH, item: mealItem9 },     // Lobster Roll
+    { day: Weekday.FRI, meal: MealType.DINNER, item: mealItem7 },    // Salmon
+  ];
+
+  for (const entry of premiumSchedule) {
+    await prisma.mealPlanTemplate.upsert({
+      where: {
+        mealPlanTypeId_dayOfWeek_mealType: {
+          mealPlanTypeId: mealPlanType2.id,
+          dayOfWeek: entry.day,
+          mealType: entry.meal,
+        },
+      },
+      update: {},
+      create: {
+        mealPlanTypeId: mealPlanType2.id,
+        dayOfWeek: entry.day,
+        mealType: entry.meal,
+        mealItemId: entry.item.id,
+      },
+    });
+  }
+
+  // vegetarian schedule
+  const veggieSchedule = [
+    // Monday
+    { day: Weekday.MON, meal: MealType.BREAKFAST, item: mealItem4 }, // Oatmeal
+    { day: Weekday.MON, meal: MealType.LUNCH, item: mealItem6 },     // Caesar Salad
+    { day: Weekday.MON, meal: MealType.DINNER, item: mealItem2 },    // Veggie Stir Fry
+    // Tuesday
+    { day: Weekday.TUE, meal: MealType.BREAKFAST, item: mealItem3 }, // Crepes
+    { day: Weekday.TUE, meal: MealType.LUNCH, item: mealItem6 },     // Caesar Salad
+    { day: Weekday.TUE, meal: MealType.DINNER, item: mealItem10 },   // Risotto
+    // Wednesday
+    { day: Weekday.WED, meal: MealType.BREAKFAST, item: mealItem4 }, // Oatmeal
+    { day: Weekday.WED, meal: MealType.LUNCH, item: mealItem2 },     // Veggie Stir Fry
+    { day: Weekday.WED, meal: MealType.DINNER, item: mealItem10 },   // Risotto
+    // Thursday
+    { day: Weekday.THU, meal: MealType.BREAKFAST, item: mealItem3 }, // Crepes
+    { day: Weekday.THU, meal: MealType.LUNCH, item: mealItem6 },     // Caesar Salad
+    { day: Weekday.THU, meal: MealType.DINNER, item: mealItem2 },    // Veggie Stir Fry
+    // Friday
+    { day: Weekday.FRI, meal: MealType.BREAKFAST, item: mealItem4 }, // Oatmeal
+    { day: Weekday.FRI, meal: MealType.LUNCH, item: mealItem10 },    // Risotto
+    { day: Weekday.FRI, meal: MealType.DINNER, item: mealItem2 },    // Veggie Stir Fry
+  ];
+
+  for (const entry of veggieSchedule) {
+    await prisma.mealPlanTemplate.upsert({
+      where: {
+        mealPlanTypeId_dayOfWeek_mealType: {
+          mealPlanTypeId: mealPlanType3.id,
+          dayOfWeek: entry.day,
+          mealType: entry.meal,
+        },
+      },
+      update: {},
+      create: {
+        mealPlanTypeId: mealPlanType3.id,
+        dayOfWeek: entry.day,
+        mealType: entry.meal,
+        mealItemId: entry.item.id,
+      },
+    });
+  }
+
   await prisma.mealItemIngredient.upsert({
     where: {
       mealItemId_ingredientId: {
@@ -676,7 +877,7 @@ await prisma.profile.upsert({
   update: {},
   create: {
     studentId: "2026-002",
-    roomNumber: "A101", // same room → roommates 👀
+    roomNumber: "A101",
     avatarUrl: "https://example.com/avatar2.png",
     userId: user2.id,
   },

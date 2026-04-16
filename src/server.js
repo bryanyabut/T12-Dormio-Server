@@ -14,6 +14,7 @@ const userRoutes = require("./routes/user");
 const profileRoutes = require('./routes/profile');
 const choreRoutes = require('./routes/choreRoutes');
 const calendarRoutes = require('./routes/calendarRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('../swagger');
@@ -48,6 +49,7 @@ app.use("/api/v1/users", userRoutes);
 app.use('/api/v1/profile', profileRoutes);
 app.use("/api/v1/chores", choreRoutes);
 app.use('/api/v1/calendar', calendarRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
 
 
 //TODO:Error Handling Middleware

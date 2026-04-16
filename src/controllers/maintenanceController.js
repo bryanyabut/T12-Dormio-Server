@@ -64,65 +64,65 @@ const updateMaintenanceRStatus = asyncHandler(async (req, res, next) => {
   if (!status || !statusOptions.includes(status)) {
     res.status(422);
     return next(
-      new Error(
-        `Status is required and must be one of: ${statusOptions.join(", ")}`,
-      ),
+      new Error(`Status is required and must be one of: ${statusOptions.join(", ")}`)
     );
   }
 
-  let resolvedAt;
-  if (status === "RESOLVED") {
-    resolvedAt = new Date();
-  } else {
-    resolvedAt = null;
-  }
+  let resolvedAt = status === "RESOLVED" ? new Date() : null;
 
-  const request = await prisma.maintenanceRequest.update({
-    where: { id: parseInt(id) },
-    data: { status, resolvedAt, adminComment },
-    include: {
-      user: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          deviceToken: true,
-          email: true,
-        }
-      }
-    },
+  const result = await prisma.$transaction(async (tx) => {
+    const request = await tx.maintenanceRequest.update({
+      where: { id: parseInt(id) },
+      data: { status, resolvedAt, adminComment },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            deviceToken: true,
+          },
+        },
+      },
+    });
+
+    const notifTitle = `Maintenance Update`;
+    const notifBody = adminComment 
+      ? `Update: ${adminComment}` 
+      : `Your request "${request.title}" is now: ${request.status}.`;
+
+    await tx.notification.create({
+      data: {
+        userId: request.user.id,
+        title: notifTitle,
+        message: notifBody,
+        type: "MAINTENANCE_UPDATE",
+      },
+    });
+
+    return { request, notifTitle, notifBody };
   });
 
-  if (request.user?.deviceToken) {
-    const notificationMessage = adminComment
-      ? `Update: ${adminComment}`
-      : `Your maintenance request "${request.title}" is now: ${request.status}.`;
-
-    await sendNotificationToDevice(request.user.deviceToken, {
+  if (result.request.user?.deviceToken) {
+    const extraData = {
       type: "maintenance_update",
-      request_id: request.id.toString(),
-      status: request.status,
-      title: `Maintenance Request Update`,
-      message: notificationMessage,
-      user_id: request.user.id.toString(),
-      user_firstName: request.user.firstName,
-      user_lastName: request.user.lastName,
-      user_email: request.user.email,
-    });
+      REQUEST_ID: result.request.id.toString(),
+      status: result.request.status,
+    };
+
+    await sendNotificationToDevice({
+      token: result.request.user.deviceToken,
+      title: result.notifTitle,
+      body: result.notifBody,
+      data: extraData,
+    }).catch((err) => console.error("FCM Error:", err));
   }
 
-  if (!request) {
-    res.status(404);
-    return next(new Error("Maintenance request not found"));
-  }
-
-  res.status(200).json({ success: true, data: request });
+  res.status(200).json({ success: true, data: result.request });
 });
 
 //create maintenance record STUDENT
 const createMaintenanceR = asyncHandler(async (req, res, next) => {
   const { title, description, urgency } = req.body;
-
   const imageUrl = req.file ? req.file.path : null;
 
   if (!title || !description || !urgency) {
@@ -130,42 +130,63 @@ const createMaintenanceR = asyncHandler(async (req, res, next) => {
     return next(new Error("Title, description, and urgency are required"));
   }
 
-  const newRequest = await prisma.maintenanceRequest.create({
-    data: {
-      title,
-      description,
-      urgency,
-      imageUrl,
-      user: {
-        connect: {
-          id: req.user.userId,
+  const result = await prisma.$transaction(async (tx) => {
+    
+    const newRequest = await tx.maintenanceRequest.create({
+      data: {
+        title,
+        description,
+        urgency,
+        imageUrl,
+        user: {
+          connect: { id: req.user.userId },
         },
       },
-    },
-  });
+    });
 
-  // Notify all admins about the new maintenance request
-  const admins = await prisma.user.findMany({
-    where: { role: "ADMIN" },
-    select: { deviceToken: true, id: true },
-  });
+    const admins = await tx.user.findMany({
+      where: { role: "ADMIN" },
+      select: { id: true, deviceToken: true },
+    });
 
-  // Get student info for notification
-  const student = await prisma.user.findUnique({
-    where: { id: req.user.userId },
-  });
-  // Send notification to each admin with a valid device token
-  for (const admin of admins) {
-    if (admin.deviceToken) {
-      await sendNotificationToDevice(admin.deviceToken, {
-        type: "general_message",
-        title: "New Maintenance Request",
-        message: `A new maintenance request "${title}" created by: ${student.firstName} ${student.lastName}.`,
+    const student = await tx.user.findUnique({
+      where: { id: req.user.userId },
+      select: { firstName: true, lastName: true }
+    });
+
+    const studentName = student ? `${student.firstName} ${student.lastName}` : "A student";
+    const notifTitle = "New Maintenance Request";
+    const notifBody = `A new request "${title}" was created by ${studentName}.`;
+
+    if (admins.length > 0) {
+      await tx.notification.createMany({
+        data: admins.map((admin) => ({
+          userId: admin.id,
+          title: notifTitle,
+          message: notifBody,
+          type: "MAINTENANCE_NEW", 
+        })),
       });
     }
-  }
 
-  res.status(201).json({ success: true, data: newRequest });
+    return { newRequest, admins, notifTitle, notifBody };
+  });
+
+  result.admins.forEach((admin) => {
+    if (admin.deviceToken) {
+      sendNotificationToDevice({
+        token: admin.deviceToken,
+        title: result.notifTitle,
+        body: result.notifBody,
+        data: {
+          type: "maintenance_request",
+          REQUEST_ID: result.newRequest.id.toString(),
+        },
+      }).catch((err) => console.error(`FCM Error for admin ${admin.id}:`, err));
+    }
+  });
+
+  res.status(201).json({ success: true, data: result.newRequest });
 });
 
 // update maintenance record STUDENT

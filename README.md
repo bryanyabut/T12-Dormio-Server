@@ -59,6 +59,9 @@ Step-by-step instructions on how to install and set up the project.
     PORT="YOUR PORT"
     JWT_SECRET="YOUR JWT SECRET"
     JWT_EXPIRES_IN="EXPIRATION OF JWT"
+    CLOUDINARY_NAME="YOUR_CLOUDINARY_NAME"
+    CLOUDINARY_API_SECRET="YOUR_API_SECRET"
+    CLOUDINARY_API_KEY="YOUR_API_KEY"
     ```
 5.  Run prisma migration
     ```sh
@@ -72,6 +75,7 @@ Step-by-step instructions on how to install and set up the project.
     ```sh
     npx prisma db seed
     ```
+8.  Add your firebase-service-account.json to /src/config/ folder
 
 ## Usage
 

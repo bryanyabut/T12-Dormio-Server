@@ -54,7 +54,7 @@ const login = async (req, res) => {
 
 const register = async (req, res) => {
   try {
-    const { email, password, firstName, lastName, role } = req.body;
+    const { email, password, firstName, lastName, role, dormRoomNumber } = req.body;
 
     if (!email || !password || !firstName || !lastName) {
       return res.status(400).json({ error: 'Email, password, first name, and last name are all required fields.' });
@@ -79,6 +79,23 @@ const register = async (req, res) => {
         firstName,
         lastName,
         role: role || 'STUDENT',
+        address: {
+          create: {
+            unitNumber: dormRoomNumber || "N/A",
+            city: "Toronto",
+            country: "Canada",
+          }
+        },
+        profile: {
+          create: {
+            studentId: `${Date.now()}`,
+            avatarUrl: null,
+          }
+        }
+      },
+      include: {
+        profile: true,
+        address: true,
       },
     });
 
@@ -90,6 +107,7 @@ const register = async (req, res) => {
         firstName: newUser.firstName,
         lastName: newUser.lastName,
         role: newUser.role,
+        profileId: newUser.profile?.id,
       },
     });
   } catch (error) {

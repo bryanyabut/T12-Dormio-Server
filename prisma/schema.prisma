@@ -23,18 +23,19 @@ model Address {
 }
 
 model Bill {
-  id          Int        @id @default(autoincrement())
-  userId      Int        @map("user_id")
-  billName    String     @map("title")
-  totalAmount Decimal    @map("amount") @db.Decimal(10, 2)
-  dueDate     DateTime   @map("due_date") @db.Date
-  status      BillStatus @default(UNPAID)
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @default(now()) @updatedAt @map("updated_at")
+  id            Int            @id @default(autoincrement())
+  userId        Int            @map("user_id")
+  billName      String         @map("title")
+  totalAmount   Decimal        @map("amount") @db.Decimal(10, 2)
+  dueDate       DateTime       @map("due_date") @db.Date
+  category      ExpenseCategory?
+  status        BillStatus     @default(UNPAID)
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @default(now()) @updatedAt @map("updated_at")
 
-  user          User           @relation(fields: [userId], references: [id])
-  billSharing   BillSharing[]
   billReminders BillReminder[]
+  billSharing   BillSharing[]
+  user          User           @relation(fields: [userId], references: [id])
 
   @@index([dueDate, status])
   @@map("bills")
@@ -47,8 +48,7 @@ model BillReminder {
   isSent       Boolean        @default(false) @map("is_sent")
   method       ReminderMethod @default(NOTIFICATION)
   createdAt    DateTime       @default(now()) @map("created_at")
-
-  bill Bill @relation(fields: [billId], references: [id], onDelete: Cascade)
+  bill         Bill           @relation(fields: [billId], references: [id], onDelete: Cascade)
 
   @@index([billId, reminderDate])
   @@map("bill_reminders")
@@ -61,9 +61,8 @@ model BillSharing {
   shareAmount Decimal   @map("share_amount") @db.Decimal(10, 2)
   hasPaid     Boolean   @default(false) @map("has_paid")
   paidAt      DateTime? @map("paid_at")
-
-  bill Bill @relation(fields: [billId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bill        Bill      @relation(fields: [billId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([billId, userId])
   @@index([userId])
@@ -80,26 +79,36 @@ model Budget {
   category    ExpenseCategory?
   createdAt   DateTime         @default(now()) @map("created_at")
   updatedAt   DateTime         @default(now()) @updatedAt @map("updated_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("budgets")
 }
 
+model Chore {
+  id                Int               @id @default(autoincrement())
+  choreName         String            @map("chore_name")
+  description       String?
+  dueDate           DateTime          @map("due_date")
+  status            ChoreStatus       @default(PENDING)
+  completedByUserId Int?              @map("completed_by_user_id")
+  completedAt       DateTime?         @map("completed_at")
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @default(now()) @updatedAt @map("updated_at")
+  choreAssignments  ChoreAssignment[]
+  completedByUser   User?             @relation("ChoreCompletedBy", fields: [completedByUserId], references: [id])
+
+  @@map("chores")
+}
+
 model ChoreAssignment {
-  id          Int         @id @default(autoincrement())
-  userId      Int         @map("user_id")
-  choreName   String      @map("chore_name")
-  description String?
-  dueDate     DateTime    @map("due_date")
-  status      ChoreStatus @default(PENDING)
-  createdAt   DateTime    @default(now()) @map("created_at")
-  updatedAt   DateTime    @default(now()) @updatedAt @map("updated_at")
+  id      Int   @id @default(autoincrement())
+  userId  Int   @map("user_id")
+  choreId Int   @map("chore_id")
+  chore   Chore @relation(fields: [choreId], references: [id], onDelete: Cascade)
+  user    User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, dueDate])
+  @@unique([choreId, userId])
   @@map("chore_assignments")
 }
 
@@ -111,8 +120,7 @@ model Expense {
   category    ExpenseCategory?
   expenseDate DateTime         @map("expense_date") @db.Date
   createdAt   DateTime         @default(now()) @map("created_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, expenseDate])
   @@map("expenses")
@@ -133,29 +141,27 @@ model MealItem {
   description         String?
   category            MealType?
   createdAt           DateTime             @default(now()) @map("created_at")
-  mealPlanTemplates   MealPlanTemplate[]
   mealItemIngredients MealItemIngredient[]
+  mealPlanTemplates   MealPlanTemplate[]
 
   @@map("meal_items")
 }
 
 model MealItemIngredient {
-  id           Int @id @default(autoincrement())
-  mealItemId   Int @map("meal_item_id")
-  ingredientId Int @map("ingredient_id")
-
-  mealItem   MealItem   @relation(fields: [mealItemId], references: [id], onDelete: Cascade)
-  ingredient Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  id           Int        @id @default(autoincrement())
+  mealItemId   Int        @map("meal_item_id")
+  ingredientId Int        @map("ingredient_id")
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  mealItem     MealItem   @relation(fields: [mealItemId], references: [id], onDelete: Cascade)
 
   @@unique([mealItemId, ingredientId])
   @@map("meal_item_ingredients")
 }
 
 model MealPlanType {
-  id          Int     @id @default(autoincrement())
-  name        String  @unique
-  description String?
-
+  id                Int                @id @default(autoincrement())
+  name              String             @unique
+  description       String?
   mealPlanTemplates MealPlanTemplate[]
   userMealPlans     UserMealPlan[]
 
@@ -163,28 +169,26 @@ model MealPlanType {
 }
 
 model MealPlanTemplate {
-  id             Int      @id @default(autoincrement())
-  mealPlanTypeId Int      @map("meal_plan_type_id")
+  id             Int          @id @default(autoincrement())
+  mealPlanTypeId Int          @map("meal_plan_type_id")
   dayOfWeek      Weekday
   mealType       MealType
-  mealItemId     Int      @map("meal_item_id")
-
-  mealPlanType MealPlanType @relation(fields: [mealPlanTypeId], references: [id], onDelete: Cascade)
-  mealItem     MealItem     @relation(fields: [mealItemId], references: [id])
+  mealItemId     Int          @map("meal_item_id")
+  mealItem       MealItem     @relation(fields: [mealItemId], references: [id])
+  mealPlanType   MealPlanType @relation(fields: [mealPlanTypeId], references: [id], onDelete: Cascade)
 
   @@unique([mealPlanTypeId, dayOfWeek, mealType])
   @@map("meal_plan_templates")
 }
 
 model UserMealPlan {
-  id             Int      @id @default(autoincrement())
-  userId         Int      @map("user_id")
-  mealPlanTypeId Int      @map("meal_plan_type_id")
-  startDate      DateTime @map("start_date") @db.Date
-  endDate        DateTime @map("end_date") @db.Date
-
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  mealPlanType MealPlanType @relation(fields: [mealPlanTypeId], references: [id], onDelete: Cascade)
+  id             Int          @id @default(autoincrement())
+  userId         Int          @map("user_id")
+  mealPlanTypeId Int          @map("meal_plan_type_id")
+  startDate      DateTime     @map("start_date") @db.Date
+  endDate        DateTime     @map("end_date") @db.Date
+  mealPlanType   MealPlanType @relation(fields: [mealPlanTypeId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, startDate, endDate])
   @@map("user_meal_plans")
@@ -199,65 +203,89 @@ model Schedule {
   startTime   DateTime     @map("start_time")
   endTime     DateTime     @map("end_time")
   location    String?
-
-  // Fields are for Optional Classes
-  courseCode String? @map("course_code")
-  section    String?
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseCode  String?      @map("course_code")
+  section     String?
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @default(now()) @updatedAt @map("updated_at")
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, startTime])
   @@map("schedules")
 }
 
 model MaintenanceRequest {
-  id          Int           @id @default(autoincrement())
-  userId      Int           @map("user_id")
-  title       String
-  description String
-  urgency     UrgencyLevel
-  status      RequestStatus @default(PENDING)
-  createdAt   DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime      @updatedAt @map("updated_at")
-  resolvedAt  DateTime?     @map("resolved_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           Int           @id @default(autoincrement())
+  userId       Int           @map("user_id")
+  title        String
+  description  String
+  urgency      UrgencyLevel
+  status       RequestStatus @default(PENDING)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  resolvedAt   DateTime?     @map("resolved_at")
+  adminComment String?       @map("admin_comment")
+  imageUrl     String?       @map("image_url")
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, status])
   @@map("maintenance_requests")
 }
 
 model User {
-  id           Int      @id @default(autoincrement())
-  firstName    String   @map("first_name")
-  lastName     String   @map("last_name")
-  email        String   @unique
-  passwordHash String   @map("password_hash")
-  role         UserRole @default(STUDENT)
-  deviceToken  String?  @map("device_token")
-  addressId    Int?     @map("address_id")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  address             Address?             @relation(fields: [addressId], references: [id])
-  userMealPlans       UserMealPlan[]
-  choreAssignments    ChoreAssignment[]
-  budgets             Budget[]
-  expenses            Expense[]
-  bills               Bill[]
+  id                  Int                  @id @default(autoincrement())
+  firstName           String               @map("first_name")
+  lastName            String               @map("last_name")
+  email               String               @unique
+  passwordHash        String               @map("password_hash")
+  role                UserRole             @default(STUDENT)
+  addressId           Int?                 @map("address_id")
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+  deviceToken         String?              @map("device_token")
   billSharing         BillSharing[]
-  schedules           Schedule[]
+  bills               Bill[]
+  budgets             Budget[]
+  choreAssignments    ChoreAssignment[]
+  choresCompleted     Chore[]              @relation("ChoreCompletedBy")
+  expenses            Expense[]
   maintenanceRequests MaintenanceRequest[]
+  notifications       Notification[]
+  profile             Profile?
+  schedules           Schedule[]
+  userMealPlans       UserMealPlan[]
+  address             Address?             @relation(fields: [addressId], references: [id])
 
   @@index([email])
   @@map("users")
 }
 
-//Enums
+model Profile {
+  id         Int     @id @default(autoincrement())
+  studentId  String  @unique @map("student_id")
+  roomNumber String? @map("room_number")
+  avatarUrl  String? @map("avatar_url")
+
+  // Relation to User
+  userId Int  @unique @map("user_id")
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  title     String
+  message   String
+  type      String   
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
 enum UserRole {
   STUDENT @map("student")
   STAFF   @map("staff")
@@ -334,4 +362,3 @@ enum Weekday {
   SAT
   SUN
 }
-

@@ -11,6 +11,13 @@ const mealPlanningRoutes = require("./routes/mealPlanningRoutes");
 const { notFound, errorHandler} = require("./middleware/errorMiddleware");
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
+const profileRoutes = require('./routes/profile');
+const choreRoutes = require('./routes/choreRoutes');
+const calendarRoutes = require('./routes/calendarRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const billRoutes = require('./routes/billRoutes');
+const expenseRoutes = require('./routes/expenseRoutes');
+const budgetRoutes = require('./routes/budgetRoutes');
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('../swagger');
@@ -42,6 +49,13 @@ app.use("/api/v1/maintenance", maintenanceRoutes);
 app.use("/api/v1/meal-plans", mealPlanningRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", userRoutes);
+app.use('/api/v1/profile', profileRoutes);
+app.use("/api/v1/chores", choreRoutes);
+app.use('/api/v1/calendar', calendarRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/bills', billRoutes);
+app.use('/api/v1/expenses', expenseRoutes);
+app.use('/api/v1/budgets', budgetRoutes);
 
 
 //TODO:Error Handling Middleware

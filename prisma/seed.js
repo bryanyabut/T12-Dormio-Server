@@ -75,17 +75,17 @@ async function main() {
   const hashPassUser2 = await bcrypt.hash('pass456', 10);
 
   const user2 = await prisma.user.upsert({
-    where: { email: 'bob.smith@example.com' },
-    update: {},
-    create: {
-      firstName: 'Bob',
-      lastName: 'Smith',
-      email: 'bob.smith@example.com',
-      passwordHash: hashPassUser2,
-      role: UserRole.STUDENT,
-      addressId: address2.id,
-    },
-  })
+  where: { email: 'bob.smith@example.com' },
+  update: {},
+  create: {
+    firstName: 'Bob',
+    lastName: 'Smith',
+    email: 'bob.smith@example.com',
+    passwordHash: hashPassUser2,
+    role: UserRole.STUDENT,
+    addressId: address1.id,
+  },
+})
 
   const hashPassAdmin = await bcrypt.hash('adminpass', 10);
 
@@ -187,6 +187,207 @@ async function main() {
       category: MealType.BREAKFAST,
     },
   })
+
+  const mealItem4 = await prisma.mealItem.upsert({
+    where: { id: 4 },
+    update: {},
+    create: {
+      id: 4,
+      name: 'Oatmeal with Berries',
+      description: 'Warm oats topped with fresh blueberries and honey',
+      category: MealType.BREAKFAST,
+    },
+  })
+
+  const mealItem5 = await prisma.mealItem.upsert({
+    where: { id: 5 },
+    update: {},
+    create: {
+      id: 5,
+      name: 'Beef Tacos',
+      description: 'Three soft shell tacos with ground beef, lettuce, and cheese',
+      category: MealType.DINNER,
+    },
+  })
+
+  const mealItem6 = await prisma.mealItem.upsert({
+    where: { id: 6 },
+    update: {},
+    create: {
+      id: 6,
+      name: 'Classic Caesar Salad',
+      description: 'Romaine lettuce with croutons, parmesan, and Caesar dressing',
+      category: MealType.LUNCH,
+    },
+  })
+
+  const mealItem7 = await prisma.mealItem.upsert({
+    where: { id: 7 },
+    update: {},
+    create: {
+      id: 7,
+      name: 'Grilled Salmon Steak',
+      description: 'Fresh Atlantic salmon with asparagus and lemon butter',
+      category: MealType.DINNER,
+    },
+  });
+
+  const mealItem8 = await prisma.mealItem.upsert({
+    where: { id: 8 },
+    update: {},
+    create: {
+      id: 8,
+      name: 'Eggs Benedict',
+      description: 'Poached eggs on English muffins with hollandaise sauce',
+      category: MealType.BREAKFAST,
+    },
+  });
+
+  const mealItem9 = await prisma.mealItem.upsert({
+    where: { id: 9 },
+    update: {},
+    create: {
+      id: 9,
+      name: 'Lobster Roll',
+      description: 'Chunky lobster meat in a toasted buttery bun',
+      category: MealType.LUNCH,
+    },
+  });
+
+  const mealItem10 = await prisma.mealItem.upsert({
+    where: { id: 10 },
+    update: {},
+    create: {
+      id: 10,
+      name: 'Mushroom Risotto',
+      description: 'Creamy Arborio rice with sautéed mushrooms and parmesan',
+      category: MealType.DINNER,
+    },
+  });
+
+  //basic schedule
+  const basicSchedule = [
+    // Monday
+    { day: Weekday.MON, meal: MealType.BREAKFAST, item: mealItem4 }, // Oatmeal
+    { day: Weekday.MON, meal: MealType.LUNCH, item: mealItem1 },     // Chicken
+    // Tuesday
+    { day: Weekday.TUE, meal: MealType.LUNCH, item: mealItem6 },     // Caesar Salad
+    { day: Weekday.TUE, meal: MealType.DINNER, item: mealItem5 },    // Tacos
+    // Wednesday
+    { day: Weekday.WED, meal: MealType.BREAKFAST, item: mealItem3 }, // Crepes
+    { day: Weekday.WED, meal: MealType.DINNER, item: mealItem2 },    // Stir Fry
+    // Thursday
+    { day: Weekday.THU, meal: MealType.LUNCH, item: mealItem1 },     // Chicken
+    { day: Weekday.THU, meal: MealType.DINNER, item: mealItem5 },    // Tacos
+    // Friday
+    { day: Weekday.FRI, meal: MealType.BREAKFAST, item: mealItem4 }, // Oatmeal
+    { day: Weekday.FRI, meal: MealType.LUNCH, item: mealItem6 },     // Caesar Salad
+  ];
+
+  for (const entry of basicSchedule) {
+    await prisma.mealPlanTemplate.upsert({
+      where: {
+        mealPlanTypeId_dayOfWeek_mealType: {
+          mealPlanTypeId: mealPlanType1.id,
+          dayOfWeek: entry.day,
+          mealType: entry.meal,
+        },
+      },
+      update: {},
+      create: {
+        mealPlanTypeId: mealPlanType1.id,
+        dayOfWeek: entry.day,
+        mealType: entry.meal,
+        mealItemId: entry.item.id,
+      },
+    });
+  }
+
+  // premium schedule
+  const premiumSchedule = [
+    // Monday
+    { day: Weekday.MON, meal: MealType.BREAKFAST, item: mealItem8 }, // Eggs Benedict
+    { day: Weekday.MON, meal: MealType.LUNCH, item: mealItem9 },     // Lobster Roll
+    { day: Weekday.MON, meal: MealType.DINNER, item: mealItem7 },    // Salmon
+    // Tuesday
+    { day: Weekday.TUE, meal: MealType.BREAKFAST, item: mealItem3 }, // Crepes
+    { day: Weekday.TUE, meal: MealType.LUNCH, item: mealItem1 },     // Chicken
+    { day: Weekday.TUE, meal: MealType.DINNER, item: mealItem5 },    // Tacos
+    // Wednesday
+    { day: Weekday.WED, meal: MealType.BREAKFAST, item: mealItem8 }, // Eggs Benedict
+    { day: Weekday.WED, meal: MealType.LUNCH, item: mealItem9 },     // Lobster Roll
+    { day: Weekday.WED, meal: MealType.DINNER, item: mealItem7 },    // Salmon
+    // Thursday
+    { day: Weekday.THU, meal: MealType.BREAKFAST, item: mealItem4 }, // Oatmeal
+    { day: Weekday.THU, meal: MealType.LUNCH, item: mealItem6 },     // Caesar Salad
+    { day: Weekday.THU, meal: MealType.DINNER, item: mealItem2 },    // Stir Fry
+    // Friday
+    { day: Weekday.FRI, meal: MealType.BREAKFAST, item: mealItem8 }, // Eggs Benedict
+    { day: Weekday.FRI, meal: MealType.LUNCH, item: mealItem9 },     // Lobster Roll
+    { day: Weekday.FRI, meal: MealType.DINNER, item: mealItem7 },    // Salmon
+  ];
+
+  for (const entry of premiumSchedule) {
+    await prisma.mealPlanTemplate.upsert({
+      where: {
+        mealPlanTypeId_dayOfWeek_mealType: {
+          mealPlanTypeId: mealPlanType2.id,
+          dayOfWeek: entry.day,
+          mealType: entry.meal,
+        },
+      },
+      update: {},
+      create: {
+        mealPlanTypeId: mealPlanType2.id,
+        dayOfWeek: entry.day,
+        mealType: entry.meal,
+        mealItemId: entry.item.id,
+      },
+    });
+  }
+
+  // vegetarian schedule
+  const veggieSchedule = [
+    // Monday
+    { day: Weekday.MON, meal: MealType.BREAKFAST, item: mealItem4 }, // Oatmeal
+    { day: Weekday.MON, meal: MealType.LUNCH, item: mealItem6 },     // Caesar Salad
+    { day: Weekday.MON, meal: MealType.DINNER, item: mealItem2 },    // Veggie Stir Fry
+    // Tuesday
+    { day: Weekday.TUE, meal: MealType.BREAKFAST, item: mealItem3 }, // Crepes
+    { day: Weekday.TUE, meal: MealType.LUNCH, item: mealItem6 },     // Caesar Salad
+    { day: Weekday.TUE, meal: MealType.DINNER, item: mealItem10 },   // Risotto
+    // Wednesday
+    { day: Weekday.WED, meal: MealType.BREAKFAST, item: mealItem4 }, // Oatmeal
+    { day: Weekday.WED, meal: MealType.LUNCH, item: mealItem2 },     // Veggie Stir Fry
+    { day: Weekday.WED, meal: MealType.DINNER, item: mealItem10 },   // Risotto
+    // Thursday
+    { day: Weekday.THU, meal: MealType.BREAKFAST, item: mealItem3 }, // Crepes
+    { day: Weekday.THU, meal: MealType.LUNCH, item: mealItem6 },     // Caesar Salad
+    { day: Weekday.THU, meal: MealType.DINNER, item: mealItem2 },    // Veggie Stir Fry
+    // Friday
+    { day: Weekday.FRI, meal: MealType.BREAKFAST, item: mealItem4 }, // Oatmeal
+    { day: Weekday.FRI, meal: MealType.LUNCH, item: mealItem10 },    // Risotto
+    { day: Weekday.FRI, meal: MealType.DINNER, item: mealItem2 },    // Veggie Stir Fry
+  ];
+
+  for (const entry of veggieSchedule) {
+    await prisma.mealPlanTemplate.upsert({
+      where: {
+        mealPlanTypeId_dayOfWeek_mealType: {
+          mealPlanTypeId: mealPlanType3.id,
+          dayOfWeek: entry.day,
+          mealType: entry.meal,
+        },
+      },
+      update: {},
+      create: {
+        mealPlanTypeId: mealPlanType3.id,
+        dayOfWeek: entry.day,
+        mealType: entry.meal,
+        mealItemId: entry.item.id,
+      },
+    });
+  }
 
   await prisma.mealItemIngredient.upsert({
     where: {
@@ -597,44 +798,120 @@ async function main() {
     },
   })
 
-  await prisma.choreAssignment.upsert({
+  const chore1 = await prisma.chore.upsert({
     where: { id: 1 },
     update: {},
     create: {
       id: 1,
-      userId: user1.id,
       choreName: 'Vacuum',
       description: 'Vacuum the living room',
       dueDate: new Date('2026-03-10'),
       status: ChoreStatus.PENDING,
     },
-  })
+  });
 
-  await prisma.choreAssignment.upsert({
+  const chore2 = await prisma.chore.upsert({
     where: { id: 2 },
     update: {},
     create: {
       id: 2,
-      userId: user2.id,
       choreName: 'Dishes',
       description: 'Clean the pile of dirty dishes in sink',
       dueDate: new Date('2026-01-11'),
       status: ChoreStatus.COMPLETED,
     },
-  })
+  });
 
-  await prisma.choreAssignment.upsert({
+  const chore3 = await prisma.chore.upsert({
     where: { id: 3 },
     update: {},
     create: {
       id: 3,
-      userId: user1.id,
       choreName: 'Take Out Trash',
       description: 'Take bins to the curb',
-      dueDate: new Date('2024-01-12'),
+      dueDate: new Date('2026-01-12'),
       status: ChoreStatus.PENDING,
     },
-  })
+  });
+
+  await prisma.choreAssignment.upsert({
+    where: { choreId_userId: { choreId: 1, userId: user1.id } },
+    update: {},
+    create: {
+      choreId: 1,
+      userId: user1.id,
+    },
+  });
+
+  await prisma.choreAssignment.upsert({
+    where: { choreId_userId: { choreId: 2, userId: user2.id } },
+    update: {},
+    create: {
+      choreId: 2,
+      userId: user2.id,
+    },
+  });
+
+  await prisma.choreAssignment.upsert({
+    where: { choreId_userId: { choreId: 3, userId: user1.id } },
+    update: {},
+    create: {
+      choreId: 3,
+      userId: user1.id,
+    },
+  });
+
+  await prisma.profile.upsert({
+  where: { userId: user1.id },
+  update: {},
+  create: {
+    studentId: "2026-001",
+    roomNumber: "A101",
+    avatarUrl: "https://example.com/avatar1.png",
+    userId: user1.id,
+  },
+})
+
+await prisma.profile.upsert({
+  where: { userId: user2.id },
+  update: {},
+  create: {
+    studentId: "2026-002",
+    roomNumber: "A101",
+    avatarUrl: "https://example.com/avatar2.png",
+    userId: user2.id,
+  },
+})
+
+await prisma.profile.upsert({
+  where: { userId: user3.id },
+  update: {},
+  create: {
+    studentId: "ADMIN-001",
+    roomNumber: null,
+    userId: user3.id,
+  },
+})
+
+  // Reset auto-increment sequences after the seeding with hardcoded ids
+  //TODO : Check if necessary to add for other seeded categories
+  await prisma.$executeRawUnsafe(`SELECT setval('expenses_id_seq', (SELECT MAX(id) FROM "expenses"))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('bills_id_seq', (SELECT MAX(id) FROM "bills"))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('bill_sharing_id_seq', (SELECT MAX(id) FROM "bill_sharing"))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('bill_reminders_id_seq', (SELECT MAX(id) FROM "bill_reminders"))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('budgets_id_seq', (SELECT MAX(id) FROM "budgets"))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('profiles_id_seq', (SELECT MAX(id) FROM "profiles"))`)
+
+  await prisma.$executeRawUnsafe(`SELECT setval('maintenance_requests_id_seq', (SELECT MAX(id) FROM "maintenance_requests"))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('chores_id_seq', (SELECT MAX(id) FROM "chores"))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('addresses_id_seq', (SELECT MAX(id) FROM "addresses"))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('meal_items_id_seq', (SELECT MAX(id) FROM "meal_items"))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('user_meal_plans_id_seq', (SELECT MAX(id) FROM "user_meal_plans"))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('schedules_id_seq', (SELECT MAX(id) FROM "schedules"))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('users_id_seq', (SELECT MAX(id) FROM "users"))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('ingredients_id_seq', (SELECT MAX(id) FROM "ingredients"))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('meal_plan_types_id_seq', (SELECT MAX(id) FROM "meal_plan_types"))`)
+
 
   console.log('Seeding was successful')
 }

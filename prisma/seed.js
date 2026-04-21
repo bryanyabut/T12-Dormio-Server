@@ -895,12 +895,23 @@ await prisma.profile.upsert({
 
   // Reset auto-increment sequences after the seeding with hardcoded ids
   //TODO : Check if necessary to add for other seeded categories
-  await prisma.$executeRawUnsafe(`SELECT setval('expenses_id_seq', (SELECT MAX(id) FROM expenses))`)
-  await prisma.$executeRawUnsafe(`SELECT setval('bills_id_seq', (SELECT MAX(id) FROM bills))`)
-  await prisma.$executeRawUnsafe(`SELECT setval('bill_sharing_id_seq', (SELECT MAX(id) FROM bill_sharing))`)
-  await prisma.$executeRawUnsafe(`SELECT setval('bill_reminders_id_seq', (SELECT MAX(id) FROM bill_reminders))`)
-  await prisma.$executeRawUnsafe(`SELECT setval('budgets_id_seq', (SELECT MAX(id) FROM budgets))`)
-  await prisma.$executeRawUnsafe(`SELECT setval('profiles_id_seq', (SELECT MAX(id) FROM profiles))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('expenses_id_seq', (SELECT MAX(id) FROM "expenses"))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('bills_id_seq', (SELECT MAX(id) FROM "bills"))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('bill_sharing_id_seq', (SELECT MAX(id) FROM "bill_sharing"))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('bill_reminders_id_seq', (SELECT MAX(id) FROM "bill_reminders"))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('budgets_id_seq', (SELECT MAX(id) FROM "budgets"))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('profiles_id_seq', (SELECT MAX(id) FROM "profiles"))`)
+
+  await prisma.$executeRawUnsafe(`SELECT setval('maintenance_requests_id_seq', (SELECT MAX(id) FROM "maintenance_requests"))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('chores_id_seq', (SELECT MAX(id) FROM "chores"))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('addresses_id_seq', (SELECT MAX(id) FROM "addresses"))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('meal_items_id_seq', (SELECT MAX(id) FROM "meal_items"))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('user_meal_plans_id_seq', (SELECT MAX(id) FROM "user_meal_plans"))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('schedules_id_seq', (SELECT MAX(id) FROM "schedules"))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('users_id_seq', (SELECT MAX(id) FROM "users"))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('ingredients_id_seq', (SELECT MAX(id) FROM "ingredients"))`)
+  await prisma.$executeRawUnsafe(`SELECT setval('meal_plan_types_id_seq', (SELECT MAX(id) FROM "meal_plan_types"))`)
+
 
   console.log('Seeding was successful')
 }
